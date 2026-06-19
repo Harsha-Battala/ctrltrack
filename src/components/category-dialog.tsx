@@ -16,7 +16,7 @@ export function CategoryDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   initial?: CategoryDraft;
-  onSubmit: (draft: CategoryDraft) => Promise<void> | void;
+  onSubmit: (draft: CategoryDraft) => Promise<unknown> | unknown;
   title: string;
 }) {
   const [name, setName] = useState("");

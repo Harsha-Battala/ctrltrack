@@ -21,7 +21,7 @@ export function ItemDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   initial?: Partial<ItemDraft>;
-  onSubmit: (draft: ItemDraft) => Promise<void> | void;
+  onSubmit: (draft: ItemDraft) => Promise<unknown> | unknown;
   title: string;
 }) {
   const [itTitle, setTitle] = useState("");
