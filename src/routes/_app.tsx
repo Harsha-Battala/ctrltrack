@@ -19,7 +19,6 @@ import {
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app")({
-  ssr: false,
   component: AppShell,
 });
 
