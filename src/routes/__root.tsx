@@ -83,10 +83,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "CtrlTrack is your personal command center for goals, tasks, habits, and growth — all in one beautiful dashboard." },
       { name: "author", content: "CtrlTrack" },
       { property: "og:title", content: "CtrlTrack — Control Your Goals. Track Your Progress." },
-      { property: "og:description", content: "Organize tasks, learning, applications, habits and goals from a single command center." },
+      { property: "og:description", content: "CtrlTrack is your personal command center for goals, tasks, habits, and growth — all in one beautiful dashboard." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "CtrlTrack — Control Your Goals. Track Your Progress." },
+      { name: "twitter:description", content: "CtrlTrack is your personal command center for goals, tasks, habits, and growth — all in one beautiful dashboard." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/2ea12258-7704-4eb4-a6b8-b2488b5e801e" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/2ea12258-7704-4eb4-a6b8-b2488b5e801e" },
     ],
     links: [
       {
