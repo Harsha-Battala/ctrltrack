@@ -71,7 +71,7 @@ function Landing() {
             { icon: BarChart3, title: "Progress at a glance", body: "Animated progress bars, completion rates, and a live activity feed." },
             { icon: Target, title: "Personal goals", body: "Set the career goal that drives you, and align every task to it." },
             { icon: Sparkles, title: "Beautiful by default", body: "A dark, modern interface designed to feel calm and powerful." },
-            { icon: Zap, title: "Lightning fast", body: "Realtime cloud sync, secure auth, and instant search across everything." },
+            { icon: ArrowRight, title: "Lightning fast", body: "Realtime cloud sync, secure auth, and instant search across everything." },
           ].map(({ icon: Icon, title, body }) => (
             <div key={title} className="rounded-2xl border border-border bg-gradient-surface p-6 shadow-card backdrop-blur">
               <div className="mb-4 grid h-10 w-10 place-items-center rounded-lg bg-primary/15 text-primary">
