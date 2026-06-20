@@ -27,10 +27,8 @@ function Landing() {
     <div className="min-h-screen bg-background bg-hero text-foreground">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <div className="flex items-center gap-2 font-bold tracking-tight">
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-primary shadow-elegant">
-            <Zap className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <span className="text-lg">CtrlTrack</span>
+          <img src={logoSrc} alt="CtrlTrack" className="h-9 w-9 rounded-lg object-contain" />
+          <span className="text-lg font-display">CtrlTrack</span>
         </div>
         <div className="flex items-center gap-2">
           <Link to="/auth">
