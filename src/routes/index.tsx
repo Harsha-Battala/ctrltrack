@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { ArrowRight, CheckCircle2, BarChart3, Layers, Sparkles, Target, Zap } from "lucide-react";
+import { ArrowRight, CheckCircle2, BarChart3, Layers, Sparkles, Target } from "lucide-react";
+import logoSrc from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 
