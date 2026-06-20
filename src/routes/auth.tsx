@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Zap } from "lucide-react";
+import logoSrc from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,10 +81,8 @@ function AuthPage() {
     <div className="min-h-screen bg-background bg-hero">
       <div className="mx-auto flex max-w-md flex-col px-6 py-10">
         <Link to="/" className="mb-10 flex items-center gap-2 font-bold tracking-tight">
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-primary shadow-elegant">
-            <Zap className="h-5 w-5 text-primary-foreground" />
-          </div>
-          CtrlTrack
+          <img src={logoSrc} alt="CtrlTrack" className="h-9 w-9 rounded-lg object-contain" />
+          <span className="font-display">CtrlTrack</span>
         </Link>
 
         <div className="rounded-2xl border border-border bg-gradient-surface p-6 shadow-card backdrop-blur">

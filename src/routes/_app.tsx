@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { LayoutDashboard, FolderKanban, Activity, User, LogOut, Zap, Menu } from "lucide-react";
+import { LayoutDashboard, FolderKanban, Activity, User, LogOut, Menu } from "lucide-react";
+import logoSrc from "@/assets/logo.png";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,10 +53,8 @@ function AppShell() {
         <Sidebar collapsible="icon">
           <SidebarHeader>
             <Link to="/dashboard" className="flex items-center gap-2 p-2 font-bold">
-              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-primary shadow-elegant">
-                <Zap className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="group-data-[collapsible=icon]:hidden">CtrlTrack</span>
+              <img src={logoSrc} alt="CtrlTrack" className="h-8 w-8 shrink-0 rounded-lg object-contain" />
+              <span className="group-data-[collapsible=icon]:hidden font-display">CtrlTrack</span>
             </Link>
           </SidebarHeader>
           <SidebarContent>

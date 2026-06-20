@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { ArrowRight, CheckCircle2, BarChart3, Layers, Sparkles, Target, Zap } from "lucide-react";
+import { ArrowRight, CheckCircle2, BarChart3, Layers, Sparkles, Target } from "lucide-react";
+import logoSrc from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 
@@ -26,10 +27,8 @@ function Landing() {
     <div className="min-h-screen bg-background bg-hero text-foreground">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <div className="flex items-center gap-2 font-bold tracking-tight">
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-primary shadow-elegant">
-            <Zap className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <span className="text-lg">CtrlTrack</span>
+          <img src={logoSrc} alt="CtrlTrack" className="h-9 w-9 rounded-lg object-contain" />
+          <span className="text-lg font-display">CtrlTrack</span>
         </div>
         <div className="flex items-center gap-2">
           <Link to="/auth">
@@ -72,7 +71,7 @@ function Landing() {
             { icon: BarChart3, title: "Progress at a glance", body: "Animated progress bars, completion rates, and a live activity feed." },
             { icon: Target, title: "Personal goals", body: "Set the career goal that drives you, and align every task to it." },
             { icon: Sparkles, title: "Beautiful by default", body: "A dark, modern interface designed to feel calm and powerful." },
-            { icon: Zap, title: "Lightning fast", body: "Realtime cloud sync, secure auth, and instant search across everything." },
+            { icon: ArrowRight, title: "Lightning fast", body: "Realtime cloud sync, secure auth, and instant search across everything." },
           ].map(({ icon: Icon, title, body }) => (
             <div key={title} className="rounded-2xl border border-border bg-gradient-surface p-6 shadow-card backdrop-blur">
               <div className="mb-4 grid h-10 w-10 place-items-center rounded-lg bg-primary/15 text-primary">
