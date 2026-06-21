@@ -46,7 +46,15 @@ export async function ensureStarterCategories(userId: string): Promise<number> {
     description: c.description,
   }));
 
-  const { error: insertError } = await supabase.from("categories").insert(rows);
-  if (insertError) throw insertError;
-  return rows.length;
+  const { data: inserted, error: insertError } = await supabase
+    .from("categories")
+    .insert(rows)
+    .select("id");
+  if (insertError) {
+    // 23505 = unique_violation. Means another concurrent seeder already created them.
+    // That's the desired end state, so swallow it.
+    if ((insertError as any).code === "23505") return 0;
+    throw insertError;
+  }
+  return inserted?.length ?? 0;
 }
