@@ -12,16 +12,27 @@ type AuthCtx = {
 
 const Ctx = createContext<AuthCtx>({ user: null, session: null, loading: true, signOut: async () => {} });
 
+const seedInFlight = new Map<string, Promise<void>>();
+
 async function maybeSeedStarters(userId: string) {
   if (typeof window === "undefined") return;
   const key = `ctrltrack:seeded:${userId}`;
   if (window.localStorage.getItem(key)) return;
-  try {
-    await ensureStarterCategories(userId);
-    window.localStorage.setItem(key, "1");
-  } catch {
-    // ignore — user can run "Setup Starter Categories" manually
+  // Set the flag immediately so a parallel auth event in this tab doesn't double-seed.
+  window.localStorage.setItem(key, "1");
+  // Also coalesce concurrent calls in this tab to a single promise.
+  let p = seedInFlight.get(userId);
+  if (!p) {
+    p = ensureStarterCategories(userId)
+      .then(() => undefined)
+      .catch(() => {
+        // Roll back the flag so the user can retry manually if seeding genuinely failed.
+        window.localStorage.removeItem(key);
+      })
+      .finally(() => seedInFlight.delete(userId));
+    seedInFlight.set(userId, p);
   }
+  await p;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
