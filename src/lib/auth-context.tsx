@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureStarterCategories } from "@/lib/starter-categories";
 
 type AuthCtx = {
   user: User | null;
@@ -19,10 +20,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
       setLoading(false);
+      if (s?.user) maybeSeedStarters(s.user.id);
     });
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);
+      if (data.session?.user) maybeSeedStarters(data.session.user.id);
     });
     return () => sub.subscription.unsubscribe();
   }, []);
