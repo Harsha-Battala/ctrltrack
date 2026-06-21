@@ -12,6 +12,18 @@ type AuthCtx = {
 
 const Ctx = createContext<AuthCtx>({ user: null, session: null, loading: true, signOut: async () => {} });
 
+async function maybeSeedStarters(userId: string) {
+  if (typeof window === "undefined") return;
+  const key = `ctrltrack:seeded:${userId}`;
+  if (window.localStorage.getItem(key)) return;
+  try {
+    await ensureStarterCategories(userId);
+    window.localStorage.setItem(key, "1");
+  } catch {
+    // ignore — user can run "Setup Starter Categories" manually
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
