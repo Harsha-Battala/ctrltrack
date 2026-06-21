@@ -189,7 +189,7 @@ function CategoriesList() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditing({ id: c.id, name: c.name, icon: c.icon, color: c.color })}>
+                        <DropdownMenuItem onClick={() => setEditing({ id: c.id, name: c.name, icon: c.icon, color: c.color, description: c.description ?? "" })}>
                           <Edit2 className="mr-2 h-4 w-4" /> Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteId(c.id)}>
