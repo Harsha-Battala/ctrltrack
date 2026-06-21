@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Plus, Search, MoreVertical, Trash2, Edit2 } from "lucide-react";
+import { Plus, Search, MoreVertical, Trash2, Edit2, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { useAuth } from "@/lib/auth-context";
 import { getIcon } from "@/lib/icons";
 import { CategoryDialog, type CategoryDraft } from "@/components/category-dialog";
 import { logActivity } from "@/lib/activity";
+import { ensureStarterCategories } from "@/lib/starter-categories";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/categories")({
@@ -39,6 +40,7 @@ function CategoriesList() {
   const [editing, setEditing] = useState<CategoryDraft | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [seeding, setSeeding] = useState(false);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories-full", user?.id],
@@ -46,7 +48,7 @@ function CategoriesList() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("categories")
-        .select("id,name,icon,color,created_at, items(id,completed)")
+        .select("id,name,icon,color,description,created_at, items(id,completed)")
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -63,14 +65,14 @@ function CategoriesList() {
     if (!user) return;
     if (draft.id) {
       const { error } = await supabase.from("categories").update({
-        name: draft.name, icon: draft.icon, color: draft.color,
+        name: draft.name, icon: draft.icon, color: draft.color, description: draft.description ?? null,
       }).eq("id", draft.id);
       if (error) return toast.error(error.message);
       await logActivity({ userId: user.id, action: "updated", entityType: "category", entityId: draft.id, entityTitle: draft.name });
       toast.success("Category updated");
     } else {
       const { data, error } = await supabase.from("categories").insert({
-        user_id: user.id, name: draft.name, icon: draft.icon, color: draft.color,
+        user_id: user.id, name: draft.name, icon: draft.icon, color: draft.color, description: draft.description ?? null,
       }).select().single();
       if (error) return toast.error(error.message);
       await logActivity({ userId: user.id, action: "created", entityType: "category", entityId: data.id, entityTitle: draft.name });
@@ -92,16 +94,38 @@ function CategoriesList() {
     qc.invalidateQueries({ queryKey: ["stats"] });
   }
 
+  async function setupStarters() {
+    if (!user) return;
+    setSeeding(true);
+    try {
+      const n = await ensureStarterCategories(user.id);
+      if (n === 0) toast.info("All starter categories already exist.");
+      else toast.success(`Added ${n} starter ${n === 1 ? "category" : "categories"}.`);
+      qc.invalidateQueries({ queryKey: ["categories-full"] });
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.invalidateQueries({ queryKey: ["stats"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to set up starter categories");
+    } finally {
+      setSeeding(false);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Categories</h1>
-          <p className="text-muted-foreground">Organize every area of your life.</p>
+          <p className="text-muted-foreground">Your personal life & career operating system.</p>
         </div>
-        <Button onClick={() => setCreating(true)} className="bg-gradient-primary shadow-elegant">
-          <Plus className="mr-1 h-4 w-4" /> New category
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={setupStarters} disabled={seeding}>
+            <Sparkles className="mr-1 h-4 w-4" /> {seeding ? "Setting up…" : "Setup Starter Categories"}
+          </Button>
+          <Button onClick={() => setCreating(true)} className="bg-gradient-primary shadow-elegant">
+            <Plus className="mr-1 h-4 w-4" /> New category
+          </Button>
+        </div>
       </div>
 
       <div className="relative max-w-md">
@@ -111,9 +135,28 @@ function CategoriesList() {
 
       {!filtered.length ? (
         <Card className="border-dashed border-border bg-transparent">
-          <CardContent className="grid place-items-center gap-3 p-12 text-center">
-            <p className="text-muted-foreground">{q ? "No matches." : "You haven't created any categories yet."}</p>
-            {!q && <Button onClick={() => setCreating(true)} className="bg-gradient-primary"><Plus className="mr-1 h-4 w-4" /> Create your first category</Button>}
+          <CardContent className="mx-auto grid max-w-md place-items-center gap-3 p-12 text-center">
+            {q ? (
+              <p className="text-muted-foreground">No categories match "{q}".</p>
+            ) : (
+              <>
+                <Sparkles className="h-8 w-8 text-primary" />
+                <h3 className="text-lg font-semibold">Start with a ready-made command center</h3>
+                <p className="text-sm text-muted-foreground">
+                  Add the 8 starter categories — Jobs, Learning, Certifications, Goals, Habits,
+                  Daily Goals, Fitness, and Tasks — in a single click. You can edit, remove, or
+                  add unlimited custom categories afterwards.
+                </p>
+                <div className="mt-2 flex flex-wrap justify-center gap-2">
+                  <Button onClick={setupStarters} disabled={seeding} className="bg-gradient-primary">
+                    <Sparkles className="mr-1 h-4 w-4" /> {seeding ? "Setting up…" : "Setup Starter Categories"}
+                  </Button>
+                  <Button variant="outline" onClick={() => setCreating(true)}>
+                    <Plus className="mr-1 h-4 w-4" /> Create custom
+                  </Button>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -133,6 +176,9 @@ function CategoriesList() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <h3 className="truncate font-semibold">{c.name}</h3>
+                        {c.description && (
+                          <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{c.description}</p>
+                        )}
                         <p className="text-xs text-muted-foreground">{done}/{total} completed</p>
                       </div>
                     </Link>
@@ -143,7 +189,7 @@ function CategoriesList() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditing({ id: c.id, name: c.name, icon: c.icon, color: c.color })}>
+                        <DropdownMenuItem onClick={() => setEditing({ id: c.id, name: c.name, icon: c.icon, color: c.color, description: c.description ?? "" })}>
                           <Edit2 className="mr-2 h-4 w-4" /> Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteId(c.id)}>
