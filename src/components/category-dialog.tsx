@@ -4,11 +4,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ICONS, ICON_NAMES, COLOR_OPTIONS, getIcon } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 
-export type CategoryDraft = { id?: string; name: string; icon: string; color: string };
+export type CategoryDraft = { id?: string; name: string; icon: string; color: string; description?: string };
 
 export function CategoryDialog({
   open, onOpenChange, initial, onSubmit, title,
@@ -22,6 +23,7 @@ export function CategoryDialog({
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("Folder");
   const [color, setColor] = useState(COLOR_OPTIONS[0]);
+  const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -29,6 +31,7 @@ export function CategoryDialog({
       setName(initial?.name ?? "");
       setIcon(initial?.icon ?? "Folder");
       setColor(initial?.color ?? COLOR_OPTIONS[0]);
+      setDescription(initial?.description ?? "");
     }
   }, [open, initial]);
 
@@ -49,6 +52,11 @@ export function CategoryDialog({
               <Label htmlFor="catname">Name</Label>
               <Input id="catname" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Companies Applied" />
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="catdesc">Description <span className="text-xs text-muted-foreground">(optional)</span></Label>
+            <Textarea id="catdesc" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="A short summary of what this category is for" />
           </div>
 
           <div>
@@ -95,7 +103,7 @@ export function CategoryDialog({
             className="bg-gradient-primary"
             onClick={async () => {
               setBusy(true);
-              await onSubmit({ id: initial?.id, name: name.trim(), icon, color });
+              await onSubmit({ id: initial?.id, name: name.trim(), icon, color, description: description.trim() || undefined });
               setBusy(false);
               onOpenChange(false);
             }}
