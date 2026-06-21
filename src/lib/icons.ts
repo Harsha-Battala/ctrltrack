@@ -1,13 +1,14 @@
 import {
   Briefcase, ListTodo, GraduationCap, Award, FolderKanban, Repeat,
   StickyNote, Target, Folder, Heart, Book, Code, Dumbbell, Plane,
-  ShoppingCart, DollarSign, Music, Camera, type LucideIcon,
+  ShoppingCart, DollarSign, Music, Camera, BookOpen, Flame, Calendar,
+  CheckCircle, type LucideIcon,
 } from "lucide-react";
 
 export const ICONS: Record<string, LucideIcon> = {
   Folder, Briefcase, ListTodo, GraduationCap, Award, FolderKanban, Repeat,
   StickyNote, Target, Heart, Book, Code, Dumbbell, Plane, ShoppingCart,
-  DollarSign, Music, Camera,
+  DollarSign, Music, Camera, BookOpen, Flame, Calendar, CheckCircle,
 };
 
 export const ICON_NAMES = Object.keys(ICONS);
