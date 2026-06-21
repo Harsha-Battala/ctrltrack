@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { getIcon } from "@/lib/icons";
+import { ensureStarterCategories } from "@/lib/starter-categories";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/_app/dashboard")({
@@ -27,6 +30,25 @@ function useNow() {
 function Dashboard() {
   const { user } = useAuth();
   const now = useNow();
+  const qc = useQueryClient();
+  const [seeding, setSeeding] = useState(false);
+
+  async function setupStarters() {
+    if (!user) return;
+    setSeeding(true);
+    try {
+      const n = await ensureStarterCategories(user.id);
+      if (n === 0) toast.info("All starter categories already exist.");
+      else toast.success(`Added ${n} starter ${n === 1 ? "category" : "categories"}.`);
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.invalidateQueries({ queryKey: ["categories-full"] });
+      qc.invalidateQueries({ queryKey: ["stats"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to set up starter categories");
+    } finally {
+      setSeeding(false);
+    }
+  }
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -141,9 +163,19 @@ function Dashboard() {
           </div>
           {!categories?.length ? (
             <Card className="border-dashed border-border bg-transparent">
-              <CardContent className="grid place-items-center gap-3 p-10 text-center">
-                <p className="text-muted-foreground">No categories yet — start by creating one.</p>
-                <Link to="/categories"><Button className="bg-gradient-primary"><Plus className="mr-1 h-4 w-4" /> Create category</Button></Link>
+              <CardContent className="mx-auto grid max-w-md place-items-center gap-3 p-10 text-center">
+                <Sparkles className="h-7 w-7 text-primary" />
+                <h3 className="font-semibold">Build your command center</h3>
+                <p className="text-sm text-muted-foreground">
+                  Get started instantly with 8 ready-made categories covering jobs, learning,
+                  goals, habits, fitness and more.
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button onClick={setupStarters} disabled={seeding} className="bg-gradient-primary">
+                    <Sparkles className="mr-1 h-4 w-4" /> {seeding ? "Setting up…" : "Setup Starter Categories"}
+                  </Button>
+                  <Link to="/categories"><Button variant="outline"><Plus className="mr-1 h-4 w-4" /> Create custom</Button></Link>
+                </div>
               </CardContent>
             </Card>
           ) : (
