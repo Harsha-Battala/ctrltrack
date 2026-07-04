@@ -16,6 +16,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppCoachRouteImport } from './routes/_app.coach'
 import { Route as AppCategoriesRouteImport } from './routes/_app.categories'
 import { Route as AppActivityRouteImport } from './routes/_app.activity'
 import { Route as AppCategoriesIdRouteImport } from './routes/_app.categories.$id'
@@ -54,6 +55,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCoachRoute = AppCoachRouteImport.update({
+  id: '/coach',
+  path: '/coach',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCategoriesRoute = AppCategoriesRouteImport.update({
   id: '/categories',
   path: '/categories',
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/activity': typeof AppActivityRoute
   '/categories': typeof AppCategoriesRouteWithChildren
+  '/coach': typeof AppCoachRoute
   '/dashboard': typeof AppDashboardRoute
   '/profile': typeof AppProfileRoute
   '/categories/$id': typeof AppCategoriesIdRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/activity': typeof AppActivityRoute
   '/categories': typeof AppCategoriesRouteWithChildren
+  '/coach': typeof AppCoachRoute
   '/dashboard': typeof AppDashboardRoute
   '/profile': typeof AppProfileRoute
   '/categories/$id': typeof AppCategoriesIdRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_app/activity': typeof AppActivityRoute
   '/_app/categories': typeof AppCategoriesRouteWithChildren
+  '/_app/coach': typeof AppCoachRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/categories/$id': typeof AppCategoriesIdRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/activity'
     | '/categories'
+    | '/coach'
     | '/dashboard'
     | '/profile'
     | '/categories/$id'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/activity'
     | '/categories'
+    | '/coach'
     | '/dashboard'
     | '/profile'
     | '/categories/$id'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_app/activity'
     | '/_app/categories'
+    | '/_app/coach'
     | '/_app/dashboard'
     | '/_app/profile'
     | '/_app/categories/$id'
@@ -201,6 +213,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/coach': {
+      id: '/_app/coach'
+      path: '/coach'
+      fullPath: '/coach'
+      preLoaderRoute: typeof AppCoachRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/categories': {
       id: '/_app/categories'
       path: '/categories'
@@ -240,6 +259,7 @@ const AppCategoriesRouteWithChildren = AppCategoriesRoute._addFileChildren(
 interface AppRouteChildren {
   AppActivityRoute: typeof AppActivityRoute
   AppCategoriesRoute: typeof AppCategoriesRouteWithChildren
+  AppCoachRoute: typeof AppCoachRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppProfileRoute: typeof AppProfileRoute
 }
@@ -247,6 +267,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppActivityRoute: AppActivityRoute,
   AppCategoriesRoute: AppCategoriesRouteWithChildren,
+  AppCoachRoute: AppCoachRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppProfileRoute: AppProfileRoute,
 }
