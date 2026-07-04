@@ -5,37 +5,43 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const tools = [
   {
-    name: "create_recommendation",
-    description: "Create a prioritized recommendation for the user based on their real data.",
-    input_schema: {
-      type: "object",
-      properties: {
-        title: { type: "string" },
-        body: { type: "string" },
-        tone: { type: "string", enum: ["positive", "warning", "info", "suggestion"] },
-        priority: { type: "string", enum: ["low", "medium", "high"] },
-        category_name: { type: "string", description: "Related category, if any" },
+    type: "function",
+    function: {
+      name: "create_recommendation",
+      description: "Create a prioritized recommendation for the user based on their real data.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          body: { type: "string" },
+          tone: { type: "string", enum: ["positive", "warning", "info", "suggestion"] },
+          priority: { type: "string", enum: ["low", "medium", "high"] },
+          category_name: { type: "string", description: "Related category, if any" },
+        },
+        required: ["title", "body", "tone", "priority"],
       },
-      required: ["title", "body", "tone", "priority"],
     },
   },
   {
-    name: "flag_item_at_risk",
-    description: "Flag a specific item as at-risk (overdue goal, stale habit, etc).",
-    input_schema: {
-      type: "object",
-      properties: {
-        item_id: { type: "string" },
-        reason: { type: "string" },
+    type: "function",
+    function: {
+      name: "flag_item_at_risk",
+      description: "Flag a specific item as at-risk (overdue goal, stale habit, etc).",
+      parameters: {
+        type: "object",
+        properties: {
+          item_id: { type: "string" },
+          reason: { type: "string" },
+        },
+        required: ["item_id", "reason"],
       },
-      required: ["item_id", "reason"],
     },
   },
 ];
@@ -66,7 +72,6 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
     const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Step 1: gather context (the agent's "perception" step)
     const [{ data: items }, { data: categories }, { data: activities }, { data: pastRecs }] =
       await Promise.all([
         userClient.from("items").select("*").eq("user_id", userId),
@@ -97,10 +102,13 @@ Be concise and specific, referencing real numbers from the data. Never invent da
       past_recommendations: pastRecs ?? [],
     };
 
-    const messages: any[] = [{
-      role: "user",
-      content: `Here is my current CtrlTrack data:\n\n${JSON.stringify(userPayload, null, 2)}\n\nAnalyze it and generate recommendations.`,
-    }];
+    const messages: any[] = [
+      { role: "system", content: systemPrompt },
+      {
+        role: "user",
+        content: `Here is my current CtrlTrack data:\n\n${JSON.stringify(userPayload, null, 2)}\n\nAnalyze it and generate recommendations.`,
+      },
+    ];
 
     const toolCallLog: any[] = [];
     let finalSummary = "";
@@ -108,66 +116,61 @@ Be concise and specific, referencing real numbers from the data. Never invent da
 
     while (loopGuard < 4) {
       loopGuard++;
-      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          "x-api-key": ANTHROPIC_API_KEY!,
-          "anthropic-version": "2023-06-01",
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "claude-sonnet-5",
-          max_tokens: 1500,
-          system: systemPrompt,
-          tools,
+          model: "google/gemini-3-flash-preview",
           messages,
+          tools,
         }),
       });
 
       const data = await resp.json();
       if (!resp.ok) {
-        console.error("Anthropic error", data);
+        console.error("AI Gateway error", data);
         return new Response(JSON.stringify({ error: "AI request failed", detail: data }), {
           status: 502,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      const toolUseBlocks = (data.content ?? []).filter((b: any) => b.type === "tool_use");
-      const textBlocks = (data.content ?? []).filter((b: any) => b.type === "text");
-      finalSummary = textBlocks.map((b: any) => b.text).join("\n") || finalSummary;
+      const message = data.choices?.[0]?.message;
+      const toolCalls = message?.tool_calls ?? [];
+      finalSummary = message?.content || finalSummary;
 
-      if (!toolUseBlocks.length) break;
+      if (!toolCalls.length) break;
 
-      messages.push({ role: "assistant", content: data.content });
-      const toolResults = [];
+      messages.push({ role: "assistant", content: message.content ?? "", tool_calls: toolCalls });
 
-      for (const block of toolUseBlocks) {
-        toolCallLog.push({ name: block.name, input: block.input });
+      for (const call of toolCalls) {
+        const args = JSON.parse(call.function.arguments || "{}");
+        toolCallLog.push({ name: call.function.name, input: args });
 
-        if (block.name === "create_recommendation") {
+        let toolResultContent = "Unknown tool, ignored.";
+
+        if (call.function.name === "create_recommendation") {
           const cat = categories?.find(
-            (c: any) => c.name.toLowerCase() === (block.input.category_name ?? "").toLowerCase(),
+            (c: any) => c.name.toLowerCase() === (args.category_name ?? "").toLowerCase(),
           );
           await adminClient.from("agent_recommendations").insert({
             user_id: userId,
-            title: block.input.title,
-            body: block.input.body,
-            tone: block.input.tone,
-            priority: block.input.priority,
+            title: args.title,
+            body: args.body,
+            tone: args.tone,
+            priority: args.priority,
             category_id: cat?.id ?? null,
           });
-          toolResults.push({ type: "tool_result", tool_use_id: block.id, content: "Recommendation saved." });
-        } else if (block.name === "flag_item_at_risk") {
-          toolResults.push({
-            type: "tool_result", tool_use_id: block.id,
-            content: `Noted item ${block.input.item_id} as at-risk: ${block.input.reason}`,
-          });
-        } else {
-          toolResults.push({ type: "tool_result", tool_use_id: block.id, content: "Unknown tool, ignored." });
+          toolResultContent = "Recommendation saved.";
+        } else if (call.function.name === "flag_item_at_risk") {
+          toolResultContent = `Noted item ${args.item_id} as at-risk: ${args.reason}`;
         }
+
+        messages.push({ role: "tool", tool_call_id: call.id, content: toolResultContent });
       }
-      messages.push({ role: "user", content: toolResults });
     }
 
     await adminClient.from("agent_runs").insert({
