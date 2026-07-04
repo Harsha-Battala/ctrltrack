@@ -12,6 +12,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { computeCoachStats, generateInsights, type Insight } from "@/lib/coach";
 import { getIcon } from "@/lib/icons";
+import { useState } from "react";
+import { runAiCoach, type AgentRunResult } from "@/lib/ai-coach-client";
+
 
 export const Route = createFileRoute("/_app/coach")({
   head: () => ({
@@ -47,6 +50,23 @@ function CoachPage() {
     },
   });
 
+  const [agentResult, setAgentResult] = useState<AgentRunResult | null>(null);
+  const [agentLoading, setAgentLoading] = useState(false);
+  const [agentError, setAgentError] = useState<string | null>(null);
+
+  async function handleRunAgent() {
+    setAgentLoading(true);
+    setAgentError(null);
+    try {
+      const result = await runAiCoach();
+      setAgentResult(result);
+    } catch (err) {
+      setAgentError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setAgentLoading(false);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
@@ -79,6 +99,49 @@ function CoachPage() {
       ) : (
         <>
           <ScoreCard stats={data.stats} />
+
+          <section>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">AI Agent</h2>
+              <Button onClick={handleRunAgent} disabled={agentLoading} className="bg-gradient-primary">
+                {agentLoading ? "Thinking..." : "Run AI Coach"}
+              </Button>
+            </div>
+            {agentError && <p className="text-sm text-destructive">{agentError}</p>}
+            {agentResult && (
+              <div className="space-y-4">
+                <Card className="border-border bg-card">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-muted-foreground">{agentResult.summary}</p>
+                  </CardContent>
+                </Card>
+                <div>
+                  <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">
+                    Agent reasoning trace
+                  </p>
+                  <div className="space-y-1 text-xs text-muted-foreground">
+                    {agentResult.trace.map((t, idx) => (
+                      <div key={idx} className="rounded border border-border bg-card px-3 py-1.5">
+                        Called <span className="font-mono text-foreground">{t.name}</span>
+                        {" → "}{JSON.stringify(t.input)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {agentResult.recommendations.map((r) => (
+                    <Card key={r.id} className="border-border bg-card">
+                      <CardContent className="p-5">
+                        <h3 className="font-semibold leading-snug">{r.title}</h3>
+                        <p className="mt-1.5 text-sm text-muted-foreground">{r.body}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
           <MetricsGrid stats={data.stats} />
           <section>
             <h2 className="mb-3 text-lg font-semibold">Insights & recommendations</h2>
