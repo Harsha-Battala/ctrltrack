@@ -319,3 +319,14 @@ function ActivityDot({ action }: { action: string }) {
     "bg-primary";
   return <div className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${color}`} />;
 }
+
+function MiniMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <Card className="border-border bg-card">
+      <CardContent className="p-3">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+        <p className="text-xl font-bold">{value}</p>
+      </CardContent>
+    </Card>
+  );
+}
