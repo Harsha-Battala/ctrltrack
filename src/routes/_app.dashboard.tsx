@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { ArrowRight, CheckCircle2, Clock, Layers, Plus, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock, Layers, Plus, Sparkles, Zap, TrendingUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { ensureStarterCategories } from "@/lib/starter-categories";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { computeCoachStats } from "@/lib/coach";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — CtrlTrack" }] }),
@@ -63,18 +64,22 @@ function Dashboard() {
     queryKey: ["stats", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const [items, cats] = await Promise.all([
-        supabase.from("items").select("id,completed").eq("user_id", user!.id),
-        supabase.from("categories").select("id").eq("user_id", user!.id),
+      const [items, cats, acts] = await Promise.all([
+        supabase.from("items").select("*").eq("user_id", user!.id),
+        supabase.from("categories").select("*").eq("user_id", user!.id),
+        supabase.from("activities").select("*").eq("user_id", user!.id)
+          .order("created_at", { ascending: false }).limit(100),
       ]);
       const total = items.data?.length ?? 0;
       const completed = items.data?.filter((i) => i.completed).length ?? 0;
+      const coach = computeCoachStats(items.data ?? [], cats.data ?? [], acts.data ?? []);
       return {
         total,
         completed,
         pending: total - completed,
         categories: cats.data?.length ?? 0,
         pct: total ? Math.round((completed / total) * 100) : 0,
+        coach,
       };
     },
   });
@@ -138,6 +143,40 @@ function Dashboard() {
         <StatCard label="Pending" value={stats?.pending ?? 0} icon={Clock} tint="warning" />
       </section>
 
+      {stats?.coach && (
+        <section className="grid gap-4 md:grid-cols-4">
+          <Card className="border-border bg-card md:col-span-2">
+            <CardContent className="flex items-center gap-4 p-5">
+              <div className="grid h-16 w-16 place-items-center rounded-full border-4 border-primary/30 bg-background text-xl font-bold text-primary">
+                {stats.coach.score}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Productivity score</p>
+                <p className="text-lg font-semibold">
+                  {stats.coach.score >= 75 ? "On fire" : stats.coach.score >= 40 ? "Steady" : "Warming up"}
+                </p>
+                <Progress value={stats.coach.score} className="mt-2 h-1.5" />
+              </div>
+              <Link to="/coach" className="hidden sm:block">
+                <Button variant="outline" size="sm"><Sparkles className="mr-1 h-3.5 w-3.5" /> Coach</Button>
+              </Link>
+            </CardContent>
+          </Card>
+          <StatCard label="Today" value={stats.coach.todayCompleted} icon={Zap} tint="primary" />
+          <StatCard label="This week" value={stats.coach.weekCompleted} icon={TrendingUp} tint="success" />
+        </section>
+      )}
+
+      {stats?.coach && (stats.coach.activeGoals + stats.coach.activeHabits + stats.coach.learningDone + stats.coach.jobsApplied + stats.coach.certificationsEarned > 0) && (
+        <section className="grid gap-3 grid-cols-2 md:grid-cols-5">
+          <MiniMetric label="Active goals" value={stats.coach.activeGoals} />
+          <MiniMetric label="Active habits" value={stats.coach.activeHabits} />
+          <MiniMetric label="Learning done" value={stats.coach.learningDone} />
+          <MiniMetric label="Jobs applied" value={stats.coach.jobsApplied} />
+          <MiniMetric label="Certifications" value={stats.coach.certificationsEarned} />
+        </section>
+      )}
+
       <Card className="border-border bg-gradient-surface">
         <CardContent className="p-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -152,6 +191,24 @@ function Dashboard() {
           <Progress value={stats?.pct ?? 0} className="mt-4 h-2" />
         </CardContent>
       </Card>
+
+      {stats?.coach && stats.coach.perCategory.some((c) => c.total > 0) && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3">
+              <Sparkles className="mt-0.5 h-5 w-5 text-primary" />
+              <div>
+                <p className="font-semibold">Your coach has new insights</p>
+                <p className="text-sm text-muted-foreground">
+                  {stats.coach.mostActive ? `${stats.coach.mostActive.name} is your top area this week.` : "Personalized recommendations are ready."}
+                  {stats.coach.leastActive ? ` ${stats.coach.leastActive.name} needs attention.` : ""}
+                </p>
+              </div>
+            </div>
+            <Link to="/coach"><Button className="bg-gradient-primary">Open AI Coach <ArrowRight className="ml-1 h-4 w-4" /></Button></Link>
+          </CardContent>
+        </Card>
+      )}
 
       <section className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
