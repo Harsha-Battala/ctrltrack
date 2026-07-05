@@ -26,6 +26,7 @@ import {
   JobItemDialog, type JobItemDraft, type JobStatus,
   JOB_STATUS_LABELS, JOB_STATUS_ORDER,
 } from "@/components/job-item-dialog";
+import { HabitRow } from "@/components/habit-tracker";
 import { logActivity } from "@/lib/activity";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
@@ -39,6 +40,10 @@ const PRIORITY_RANK = { high: 0, medium: 1, low: 2 } as const;
 
 function isJobsCategory(name: string | undefined) {
   return (name ?? "").trim().toLowerCase() === "jobs applied";
+}
+
+function isHabitsCategory(name: string | undefined) {
+  return (name ?? "").trim().toLowerCase() === "habits";
 }
 
 function CategoryDetail() {
@@ -74,6 +79,29 @@ function CategoryDetail() {
   });
 
   const isJobs = isJobsCategory(category?.name);
+  const isHabits = isHabitsCategory(category?.name);
+
+  const { data: habitLogs = [] } = useQuery({
+    queryKey: ["habit-logs", id, items.map((i: any) => i.id)],
+    enabled: !!user && isHabits && items.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("habit_logs")
+        .select("*")
+        .in("item_id", items.map((i: any) => i.id));
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const logsByItem = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    (habitLogs as any[]).forEach((l) => {
+      if (!map.has(l.item_id)) map.set(l.item_id, new Set());
+      map.get(l.item_id)!.add(l.log_date);
+    });
+    return map;
+  }, [habitLogs]);
 
   const filtered = useMemo(() => {
     let r = items as any[];
@@ -84,7 +112,7 @@ function CategoryDetail() {
         (i.job_role ?? "").toLowerCase().includes(search.toLowerCase()),
       );
     }
-    if (!isJobs) {
+    if (!isJobs && !isHabits) {
       if (filter === "pending") r = r.filter((i) => !i.completed);
       if (filter === "completed") r = r.filter((i) => i.completed);
     }
@@ -97,13 +125,20 @@ function CategoryDetail() {
       }
     });
     return r;
-  }, [items, search, filter, sort, isJobs]);
+  }, [items, search, filter, sort, isJobs, isHabits]);
 
   const total = items.length;
   const done = items.filter((i: any) => i.completed).length;
   const pct = total ? Math.round((done / total) * 100) : 0;
 
-  // ---------- generic item save/toggle/remove (non-job categories) ----------
+  function invalidateAll() {
+    qc.invalidateQueries({ queryKey: ["items", id] });
+    qc.invalidateQueries({ queryKey: ["stats"] });
+    qc.invalidateQueries({ queryKey: ["categories-full"] });
+    qc.invalidateQueries({ queryKey: ["categories"] });
+  }
+
+  // ---------- generic item save/toggle/remove (non-job, non-habit categories, and habit creation) ----------
 
   async function saveItem(draft: ItemDraft) {
     if (!user || !category) return;
@@ -120,7 +155,7 @@ function CategoryDetail() {
       }).select().single();
       if (error) return toast.error(error.message);
       await logActivity({ userId: user.id, action: "created", entityType: "item", entityId: data.id, entityTitle: draft.title, categoryId: category.id, categoryName: category.name });
-      toast.success("Item added");
+      toast.success(isHabits ? "Habit added" : "Item added");
     }
     invalidateAll();
   }
@@ -172,11 +207,25 @@ function CategoryDetail() {
     invalidateAll();
   }
 
-  function invalidateAll() {
-    qc.invalidateQueries({ queryKey: ["items", id] });
+  // ---------- habit day toggle ----------
+
+  async function toggleHabitDay(itemId: string, dateKey: string) {
+    if (!user) return;
+    const already = logsByItem.get(itemId)?.has(dateKey);
+    if (already) {
+      const { error } = await supabase.from("habit_logs").delete()
+        .eq("item_id", itemId).eq("log_date", dateKey);
+      if (error) return toast.error(error.message);
+    } else {
+      const { error } = await supabase.from("habit_logs").insert({
+        user_id: user.id, item_id: itemId, log_date: dateKey,
+      });
+      if (error) return toast.error(error.message);
+      const it = items.find((i: any) => i.id === itemId);
+      await logActivity({ userId: user.id, action: "completed", entityType: "item", entityId: itemId, entityTitle: it?.title, categoryId: category?.id, categoryName: category?.name });
+    }
+    qc.invalidateQueries({ queryKey: ["habit-logs", id] });
     qc.invalidateQueries({ queryKey: ["stats"] });
-    qc.invalidateQueries({ queryKey: ["categories-full"] });
-    qc.invalidateQueries({ queryKey: ["categories"] });
   }
 
   async function toggle(item: any) {
@@ -196,7 +245,7 @@ function CategoryDetail() {
     const { error } = await supabase.from("items").delete().eq("id", itemId);
     if (error) return toast.error(error.message);
     await logActivity({ userId: user.id, action: "deleted", entityType: "item", entityId: itemId, entityTitle: it?.title, categoryId: category.id, categoryName: category.name });
-    toast.success("Item deleted");
+    toast.success(isHabits ? "Habit deleted" : "Item deleted");
     invalidateAll();
   }
 
@@ -215,6 +264,23 @@ function CategoryDetail() {
     return byStatus;
   }, [items]);
 
+  // ---------- Habits overview stats ----------
+  const habitOverview = useMemo(() => {
+    if (!isHabits || !items.length) return { avgCompletion: 0, totalStreakDays: 0 };
+    let sum = 0;
+    (items as any[]).forEach((i) => {
+      const logged = logsByItem.get(i.id) ?? new Set<string>();
+      let count = 0;
+      for (let d = 0; d < 30; d++) {
+        const dt = new Date();
+        dt.setDate(dt.getDate() - d);
+        if (logged.has(format(dt, "yyyy-MM-dd"))) count++;
+      }
+      sum += Math.round((count / 30) * 100);
+    });
+    return { avgCompletion: Math.round(sum / items.length), totalStreakDays: habitLogs.length };
+  }, [isHabits, items, logsByItem, habitLogs]);
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <Link to="/categories" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -230,14 +296,18 @@ function CategoryDetail() {
             <div className="flex-1">
               <h1 className="text-2xl font-bold">{category.name}</h1>
               <p className="text-sm text-muted-foreground">
-                {isJobs ? `${total} applications tracked` : `${done}/${total} items completed · ${pct}%`}
+                {isJobs
+                  ? `${total} applications tracked`
+                  : isHabits
+                    ? `${total} habit${total === 1 ? "" : "s"} · ${habitOverview.avgCompletion}% avg 30-day consistency`
+                    : `${done}/${total} items completed · ${pct}%`}
               </p>
             </div>
             <Button onClick={() => setCreating(true)} className="bg-gradient-primary shadow-elegant">
-              <Plus className="mr-1 h-4 w-4" /> {isJobs ? "Log application" : "Add item"}
+              <Plus className="mr-1 h-4 w-4" /> {isJobs ? "Log application" : isHabits ? "Add habit" : "Add item"}
             </Button>
           </div>
-          {!isJobs && <Progress value={pct} className="mt-4 h-2" />}
+          {!isJobs && !isHabits && <Progress value={pct} className="mt-4 h-2" />}
         </CardContent>
       </Card>
 
@@ -257,9 +327,9 @@ function CategoryDetail() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={isJobs ? "Search company or role…" : "Search items…"} className="pl-9" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={isJobs ? "Search company or role…" : isHabits ? "Search habits…" : "Search items…"} className="pl-9" />
         </div>
-        {!isJobs && (
+        {!isJobs && !isHabits && (
           <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
             <SelectTrigger className="w-[150px]"><Filter className="mr-2 h-4 w-4" /><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -269,23 +339,27 @@ function CategoryDetail() {
             </SelectContent>
           </Select>
         )}
-        <Select value={sort} onValueChange={(v) => setSort(v as any)}>
-          <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="newest">Newest first</SelectItem>
-            <SelectItem value="oldest">Oldest first</SelectItem>
-            <SelectItem value="alpha">Alphabetical</SelectItem>
-            {!isJobs && <SelectItem value="priority">By priority</SelectItem>}
-          </SelectContent>
-        </Select>
+        {!isHabits && (
+          <Select value={sort} onValueChange={(v) => setSort(v as any)}>
+            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest first</SelectItem>
+              <SelectItem value="oldest">Oldest first</SelectItem>
+              <SelectItem value="alpha">Alphabetical</SelectItem>
+              {!isJobs && <SelectItem value="priority">By priority</SelectItem>}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {!filtered.length ? (
         <Card className="border-dashed border-border bg-transparent">
           <CardContent className="grid place-items-center gap-3 p-12 text-center">
-            <p className="text-muted-foreground">{isJobs ? "No applications logged yet." : "No items yet."}</p>
+            <p className="text-muted-foreground">
+              {isJobs ? "No applications logged yet." : isHabits ? "No habits yet." : "No items yet."}
+            </p>
             <Button onClick={() => setCreating(true)} className="bg-gradient-primary">
-              <Plus className="mr-1 h-4 w-4" /> {isJobs ? "Log your first application" : "Add your first item"}
+              <Plus className="mr-1 h-4 w-4" /> {isJobs ? "Log your first application" : isHabits ? "Add your first habit" : "Add your first item"}
             </Button>
           </CardContent>
         </Card>
@@ -342,6 +416,19 @@ function CategoryDetail() {
             </Card>
           ))}
         </div>
+      ) : isHabits ? (
+        <div className="space-y-3">
+          {filtered.map((it: any) => (
+            <HabitRow
+              key={it.id}
+              item={it}
+              loggedDates={logsByItem.get(it.id) ?? new Set()}
+              onToggleDay={(dateKey) => toggleHabitDay(it.id, dateKey)}
+              onEdit={() => setEditing({ id: it.id, title: it.title, description: it.description ?? "", priority: it.priority })}
+              onDelete={() => setDeleteId(it.id)}
+            />
+          ))}
+        </div>
       ) : (
         <div className="space-y-2">
           {filtered.map((it: any) => (
@@ -382,15 +469,15 @@ function CategoryDetail() {
         </>
       ) : (
         <>
-          <ItemDialog open={creating} onOpenChange={setCreating} title="New item" onSubmit={saveItem} />
-          <ItemDialog open={!!editing} onOpenChange={(v) => !v && setEditing(null)} initial={editing ?? undefined} title="Edit item" onSubmit={saveItem} />
+          <ItemDialog open={creating} onOpenChange={setCreating} title={isHabits ? "New habit" : "New item"} onSubmit={saveItem} />
+          <ItemDialog open={!!editing} onOpenChange={(v) => !v && setEditing(null)} initial={editing ?? undefined} title={isHabits ? "Edit habit" : "Edit item"} onSubmit={saveItem} />
         </>
       )}
 
       <AlertDialog open={!!deleteId} onOpenChange={(v) => !v && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this {isJobs ? "application" : "item"}?</AlertDialogTitle>
+            <AlertDialogTitle>Delete this {isJobs ? "application" : isHabits ? "habit" : "item"}?</AlertDialogTitle>
             <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
