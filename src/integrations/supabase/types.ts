@@ -50,6 +50,83 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_recommendations: {
+        Row: {
+          body: string
+          category_id: string | null
+          created_at: string
+          id: string
+          priority: string
+          source: string
+          status: string
+          title: string
+          tone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          priority?: string
+          source?: string
+          status?: string
+          title: string
+          tone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          priority?: string
+          source?: string
+          status?: string
+          title?: string
+          tone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_recommendations_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_runs: {
+        Row: {
+          created_at: string
+          id: string
+          plan: Json
+          summary: string | null
+          tool_calls: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          plan?: Json
+          summary?: string | null
+          tool_calls?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          plan?: Json
+          summary?: string | null
+          tool_calls?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           color: string
