@@ -135,6 +135,10 @@
   ::selection {
     background: oklch(0.62 0.18 40 / 0.35);
   }
+
+   #lovable-badge {
+    display: none !important;
+  }
 }
 
 @utility bg-gradient-primary { background-image: var(--gradient-primary); }
