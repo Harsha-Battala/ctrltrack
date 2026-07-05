@@ -91,15 +91,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "CtrlTrack — Control Your Goals. Track Your Progress." },
       { name: "twitter:description", content: "A personal command center for tasks, goals, habits, applications, and growth — beautifully organized in one dashboard." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/2ea12258-7704-4eb4-a6b8-b2488b5e801e" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/2ea12258-7704-4eb4-a6b8-b2488b5e801e" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/XoC4IWm5NLQDRKhsCSHWQJuT16A2/social-images/social-1783249570193-Landing_Page.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/XoC4IWm5NLQDRKhsCSHWQJuT16A2/social-images/social-1783249570193-Landing_Page.webp" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", type: "image/png", href: "/favicon.png" },
     ],
   }),
   shellComponent: RootShell,
