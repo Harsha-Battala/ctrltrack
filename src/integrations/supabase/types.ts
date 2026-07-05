@@ -168,6 +168,11 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          job_applied_date: string | null
+          job_company: string | null
+          job_resume_sent: boolean
+          job_role: string | null
+          job_status: Database["public"]["Enums"]["job_status"] | null
           priority: Database["public"]["Enums"]["item_priority"]
           title: string
           updated_at: string
@@ -180,6 +185,11 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          job_applied_date?: string | null
+          job_company?: string | null
+          job_resume_sent?: boolean
+          job_role?: string | null
+          job_status?: Database["public"]["Enums"]["job_status"] | null
           priority?: Database["public"]["Enums"]["item_priority"]
           title: string
           updated_at?: string
@@ -192,6 +202,11 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          job_applied_date?: string | null
+          job_company?: string | null
+          job_resume_sent?: boolean
+          job_role?: string | null
+          job_status?: Database["public"]["Enums"]["job_status"] | null
           priority?: Database["public"]["Enums"]["item_priority"]
           title?: string
           updated_at?: string
@@ -246,6 +261,13 @@ export type Database = {
     }
     Enums: {
       item_priority: "low" | "medium" | "high"
+      job_status:
+        | "applied"
+        | "recruiter_action"
+        | "interview"
+        | "reviewed"
+        | "offer"
+        | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -374,6 +396,14 @@ export const Constants = {
   public: {
     Enums: {
       item_priority: ["low", "medium", "high"],
+      job_status: [
+        "applied",
+        "recruiter_action",
+        "interview",
+        "reviewed",
+        "offer",
+        "rejected",
+      ],
     },
   },
 } as const
