@@ -132,7 +132,7 @@ Be concise and specific, referencing real numbers from the data. Never invent da
       const data = await resp.json();
       if (!resp.ok) {
         console.error("AI Gateway error", data);
-        return new Response(JSON.stringify({ error: "AI request failed", detail: data }), {
+        return new Response(JSON.stringify({ error: "AI request failed" }), {
           status: 502,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -190,7 +190,7 @@ Be concise and specific, referencing real numbers from the data. Never invent da
     );
   } catch (err) {
     console.error(err);
-    return new Response(JSON.stringify({ error: String(err) }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
