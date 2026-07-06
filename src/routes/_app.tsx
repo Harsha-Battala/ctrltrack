@@ -99,11 +99,16 @@ function AppShell() {
         </Sidebar>
 
         <div className="flex min-h-screen flex-1 flex-col">
-          <header className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b border-border bg-background/80 px-4 backdrop-blur">
+          <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur">
             <SidebarTrigger>
               <Menu className="h-4 w-4" />
             </SidebarTrigger>
-            <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex-1 text-center">
+              <p className="hidden text-sm font-medium tracking-tight text-muted-foreground sm:block">
+                Control Your Goals. <span className="bg-gradient-primary bg-clip-text text-transparent">Track Your Progress.</span>
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
               {user.email}
             </div>
           </header>
