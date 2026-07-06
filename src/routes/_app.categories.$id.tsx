@@ -249,9 +249,6 @@ function CategoryDetail() {
     invalidateAll();
   }
 
-  if (!category) return <div className="text-muted-foreground">Loading…</div>;
-  const Icon = getIcon(category.icon);
-
   // ---------- Jobs pipeline stats ----------
   const jobStats = useMemo(() => {
     const byStatus: Record<JobStatus, number> = {
@@ -280,6 +277,9 @@ function CategoryDetail() {
     });
     return { avgCompletion: Math.round(sum / items.length), totalStreakDays: habitLogs.length };
   }, [isHabits, items, logsByItem, habitLogs]);
+
+  if (!category) return <div className="text-muted-foreground">Loading…</div>;
+  const Icon = getIcon(category.icon);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
