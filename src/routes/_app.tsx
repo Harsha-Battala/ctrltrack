@@ -104,8 +104,13 @@ function AppShell() {
               <Menu className="h-4 w-4" />
             </SidebarTrigger>
             <div className="flex-1 text-center">
-              <p className="hidden text-sm font-medium tracking-tight text-muted-foreground sm:block">
-                Control Your Goals. <span className="bg-gradient-primary bg-clip-text text-transparent">Track Your Progress.</span>
+              <p className="hidden cursor-default text-sm font-medium tracking-tight text-muted-foreground sm:block">
+                <span className="inline-block transition-transform duration-300 hover:scale-[1.02]">
+                  Control Your Goals.{" "}
+                  <span className="bg-gradient-primary bg-clip-text text-transparent tagline-glow tagline-shimmer inline-block">
+                    Track Your Progress.
+                  </span>
+                </span>
               </p>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
