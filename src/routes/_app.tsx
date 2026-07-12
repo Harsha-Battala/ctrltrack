@@ -103,15 +103,16 @@ function AppShell() {
             <SidebarTrigger>
               <Menu className="h-4 w-4" />
             </SidebarTrigger>
-            <div className="flex-1 text-center">
-              <p className="hidden cursor-default text-sm font-medium tracking-tight text-muted-foreground sm:block">
-                <span className="inline-block transition-transform duration-300 hover:scale-[1.02]">
-                  Control Your Goals.{" "}
-                  <span className="bg-gradient-primary bg-clip-text text-transparent tagline-glow tagline-shimmer inline-block">
-                    Track Your Progress.
-                  </span>
-                </span>
-              </p>
+            <div className="flex flex-1 justify-center">
+              <div className="tagline-shell group hidden sm:inline-flex">
+                <Sparkles className="tagline-spark h-3.5 w-3.5" strokeWidth={2.25} />
+                <p className="cursor-default text-[13px] font-semibold uppercase tracking-[0.18em]">
+                  <span className="tagline-text">Control Your Goals</span>
+                  <span className="tagline-dot mx-2.5 inline-block align-middle" />
+                  <span className="tagline-text">Track Your Progress</span>
+                </p>
+                <Sparkles className="tagline-spark h-3.5 w-3.5" strokeWidth={2.25} />
+              </div>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               {user.email}
