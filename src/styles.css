@@ -147,3 +147,26 @@
 @utility shadow-elegant { box-shadow: var(--shadow-elegant); }
 @utility shadow-card { box-shadow: var(--shadow-card); }
 
+/* Tagline vibe — ember glow + shimmer */
+@keyframes tagline-shimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+@utility tagline-glow {
+  text-shadow: 0 0 18px oklch(0.62 0.18 40 / 0.4), 0 0 36px oklch(0.68 0.16 45 / 0.2);
+  transition: text-shadow 0.3s ease, transform 0.3s ease;
+
+  &:hover {
+    text-shadow: 0 0 30px oklch(0.62 0.18 40 / 0.75), 0 0 60px oklch(0.68 0.16 45 / 0.4);
+    transform: scale(1.05);
+  }
+}
+
+@utility tagline-shimmer {
+  background-size: 200% auto;
+  animation: tagline-shimmer 4s linear infinite;
+}
+
+
+
