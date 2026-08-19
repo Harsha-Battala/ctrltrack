@@ -18,6 +18,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { toast } from "sonner";
+import { AiPet } from "@/components/ai-pet";
 
 export const Route = createFileRoute("/_app")({
   component: AppShell,
@@ -122,6 +123,7 @@ function AppShell() {
             <Outlet />
           </main>
         </div>
+        <AiPet />
       </div>
     </SidebarProvider>
   );
