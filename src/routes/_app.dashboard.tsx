@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { ArrowRight, CheckCircle2, Clock, Layers, Plus, Sparkles, Zap, TrendingUp } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock, Layers, Plus, Sparkles, Zap, TrendingUp, Sun } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
