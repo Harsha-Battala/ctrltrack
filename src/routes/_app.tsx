@@ -119,8 +119,11 @@ function AppShell() {
               {user.email}
             </div>
           </header>
-          <main className="flex-1 p-4 md:p-8">
-            <Outlet />
+          <main className="relative flex-1 bg-hero p-4 md:p-8">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+            <div key={pathname} className="page-enter">
+              <Outlet />
+            </div>
           </main>
         </div>
         <AiPet />
