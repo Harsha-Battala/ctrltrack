@@ -55,6 +55,15 @@ export function AiPet() {
   const [tip, setTip] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const tipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const petRef = useRef<HTMLButtonElement | null>(null);
+  const [paused, setPaused] = useState(false);
+
+  // Freeze the pet where it is so it is easy to click.
+  const freeze = useCallback(() => {
+    const rect = petRef.current?.getBoundingClientRect();
+    if (rect) setPos({ x: Math.round(rect.left), y: Math.round(rect.top) });
+    setPaused(true);
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -65,10 +74,10 @@ export function AiPet() {
 
   // Roam around the screen while the chat is closed.
   useEffect(() => {
-    if (!mounted || open) return;
+    if (!mounted || open || paused) return;
     const id = setInterval(() => setPos(randomPos()), 7000);
     return () => clearInterval(id);
-  }, [mounted, open]);
+  }, [mounted, open, paused]);
 
   // Occasional idle tips.
   useEffect(() => {
@@ -143,8 +152,13 @@ export function AiPet() {
       <button
         type="button"
         aria-label="Open Ctrl, your AI companion"
+        ref={petRef}
+        onMouseEnter={freeze}
+        onFocus={freeze}
+        onMouseLeave={() => setPaused(false)}
+        onBlur={() => setPaused(false)}
         onClick={() => setOpen((v) => !v)}
-        className="ai-pet fixed z-40"
+        className={cn("ai-pet fixed z-40", paused && "ai-pet-paused")}
         style={{ left: pos.x, top: pos.y }}
       >
         {tip && !open && <span className="ai-pet-tip">{tip}</span>}

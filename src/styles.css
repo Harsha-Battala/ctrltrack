@@ -331,3 +331,8 @@
   box-shadow: 0 8px 24px oklch(0 0 0 / 0.45);
   animation: pet-float 3.6s ease-in-out infinite;
 }
+
+@utility ai-pet-paused {
+  transition: none;
+  transform: scale(1.12);
+}
