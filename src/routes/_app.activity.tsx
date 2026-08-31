@@ -25,9 +25,16 @@ function ActivityFeed() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Activity</h1>
-        <p className="text-muted-foreground">Everything you've done, in one timeline.</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Activity</h1>
+          <p className="text-muted-foreground">Everything you've done, in one timeline.</p>
+        </div>
+        {activities.length > 0 && (
+          <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-primary">
+            {activities.length} events
+          </span>
+        )}
       </div>
       {!activities.length ? (
         <Card className="border-dashed border-border bg-transparent">
