@@ -93,7 +93,7 @@ function Dashboard() {
         .select("id,name,icon,color, items(id,completed)")
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false })
-        .limit(6);
+        .limit(8);
       return data ?? [];
     },
   });
