@@ -298,13 +298,13 @@ function StatCard({ label, value, icon: Icon, tint }: { label: string; value: nu
     warning: "bg-warning/15 text-warning",
   };
   return (
-    <Card className="border-border bg-card">
+    <Card className="group border-border bg-gradient-surface transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-card">
       <CardContent className="flex items-center justify-between p-5">
         <div>
           <p className="text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
-          <p className="mt-1 text-3xl font-bold">{value}</p>
+          <p className="mt-1 text-3xl font-bold tabular-nums">{value}</p>
         </div>
-        <div className={`grid h-10 w-10 place-items-center rounded-lg ${map[tint]}`}>
+        <div className={`grid h-10 w-10 place-items-center rounded-lg transition-transform duration-300 group-hover:scale-110 ${map[tint]}`}>
           <Icon className="h-5 w-5" />
         </div>
       </CardContent>
