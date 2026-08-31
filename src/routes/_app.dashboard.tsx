@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { ArrowRight, CheckCircle2, Clock, Layers, Plus, Sparkles, Zap, TrendingUp } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock, Layers, Plus, Sparkles, Zap, TrendingUp, Sun } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -93,7 +93,7 @@ function Dashboard() {
         .select("id,name,icon,color, items(id,completed)")
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false })
-        .limit(6);
+        .limit(8);
       return data ?? [];
     },
   });
@@ -124,8 +124,9 @@ function Dashboard() {
       <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-sm text-muted-foreground">{now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })} · {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight md:text-4xl">
-            {greeting}, {profile?.full_name?.split(" ")[0] ?? "there"} 👋
+          <h1 className="mt-1 flex items-center gap-2 text-3xl font-bold tracking-tight md:text-4xl">
+            {greeting}, {profile?.full_name?.split(" ")[0] ?? user?.email?.split("@")[0] ?? "there"}
+            <Sun className="h-6 w-6 shrink-0 text-primary md:h-7 md:w-7" />
           </h1>
           <p className="mt-1 text-muted-foreground">Here's your command center at a glance.</p>
         </div>
@@ -297,13 +298,13 @@ function StatCard({ label, value, icon: Icon, tint }: { label: string; value: nu
     warning: "bg-warning/15 text-warning",
   };
   return (
-    <Card className="border-border bg-card">
+    <Card className="group border-border bg-gradient-surface transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-card">
       <CardContent className="flex items-center justify-between p-5">
         <div>
           <p className="text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
-          <p className="mt-1 text-3xl font-bold">{value}</p>
+          <p className="mt-1 text-3xl font-bold tabular-nums">{value}</p>
         </div>
-        <div className={`grid h-10 w-10 place-items-center rounded-lg ${map[tint]}`}>
+        <div className={`grid h-10 w-10 place-items-center rounded-lg transition-transform duration-300 group-hover:scale-110 ${map[tint]}`}>
           <Icon className="h-5 w-5" />
         </div>
       </CardContent>
