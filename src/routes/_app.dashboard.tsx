@@ -124,8 +124,9 @@ function Dashboard() {
       <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-sm text-muted-foreground">{now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })} · {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight md:text-4xl">
-            {greeting}, {profile?.full_name?.split(" ")[0] ?? "there"} 👋
+          <h1 className="mt-1 flex items-center gap-2 text-3xl font-bold tracking-tight md:text-4xl">
+            {greeting}, {profile?.full_name?.split(" ")[0] ?? user?.email?.split("@")[0] ?? "there"}
+            <Sun className="h-6 w-6 shrink-0 text-primary md:h-7 md:w-7" />
           </h1>
           <p className="mt-1 text-muted-foreground">Here's your command center at a glance.</p>
         </div>
