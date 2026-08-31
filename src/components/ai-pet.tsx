@@ -163,9 +163,13 @@ export function AiPet() {
       >
         {tip && !open && <span className="ai-pet-tip">{tip}</span>}
         <span className={cn("ai-pet-body", busy && "ai-pet-thinking")}>
-          <span className="ai-pet-eye" />
-          <span className="ai-pet-eye" />
-          <span className="ai-pet-mouth" />
+          <span className="ai-pet-ring" />
+          <span className="ai-pet-core" />
+          <span className="ai-pet-face">
+            <span className="ai-pet-eye" />
+            <span className="ai-pet-eye" />
+          </span>
+          <span className="ai-pet-shine" />
         </span>
         <span className="ai-pet-shadow" />
       </button>
