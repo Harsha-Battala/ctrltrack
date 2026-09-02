@@ -263,8 +263,13 @@ function CategoryDetail() {
 
   // ---------- Habits overview stats ----------
   const habitOverview = useMemo(() => {
-    if (!isHabits || !items.length) return { avgCompletion: 0, totalStreakDays: 0 };
+    if (!isHabits || !items.length) {
+      return { avgCompletion: 0, totalStreakDays: 0, doneToday: 0, bestStreak: 0 };
+    }
+    const todayKey = format(new Date(), "yyyy-MM-dd");
     let sum = 0;
+    let doneToday = 0;
+    let bestStreak = 0;
     (items as any[]).forEach((i) => {
       const logged = logsByItem.get(i.id) ?? new Set<string>();
       let count = 0;
@@ -274,9 +279,17 @@ function CategoryDetail() {
         if (logged.has(format(dt, "yyyy-MM-dd"))) count++;
       }
       sum += Math.round((count / 30) * 100);
+      if (logged.has(todayKey)) doneToday++;
+      bestStreak = Math.max(bestStreak, computeBestStreak(logged));
     });
-    return { avgCompletion: Math.round(sum / items.length), totalStreakDays: habitLogs.length };
+    return {
+      avgCompletion: Math.round(sum / items.length),
+      totalStreakDays: habitLogs.length,
+      doneToday,
+      bestStreak,
+    };
   }, [isHabits, items, logsByItem, habitLogs]);
+
 
   if (!category) return <div className="text-muted-foreground">Loading…</div>;
   const Icon = getIcon(category.icon);
