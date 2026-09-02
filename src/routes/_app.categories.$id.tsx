@@ -321,8 +321,37 @@ function CategoryDetail() {
             </Button>
           </div>
           {!isJobs && !isHabits && <Progress value={pct} className="mt-4 h-2" />}
+          {isHabits && total > 0 && (
+            <div className="mt-4">
+              <div className="mb-1.5 flex items-center justify-between text-xs text-muted-foreground">
+                <span>Today's check-ins</span>
+                <span className="font-semibold text-foreground">{habitOverview.doneToday}/{total}</span>
+              </div>
+              <Progress value={total ? (habitOverview.doneToday / total) * 100 : 0} className="h-2" />
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {isHabits && total > 0 && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: "Done today", value: `${habitOverview.doneToday}/${total}` },
+            { label: "Avg consistency", value: `${habitOverview.avgCompletion}%` },
+            { label: "Longest streak", value: `${habitOverview.bestStreak}d` },
+            { label: "Total check-ins", value: habitOverview.totalStreakDays },
+          ].map((s) => (
+            <Card key={s.label} className="habit-card border-border bg-gradient-surface">
+              <CardContent className="p-3 text-center">
+                <p className="text-2xl font-bold">{s.value}</p>
+                <p className="text-xs text-muted-foreground">{s.label}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+
 
       {isJobs && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
