@@ -26,7 +26,7 @@ import {
   JobItemDialog, type JobItemDraft, type JobStatus,
   JOB_STATUS_LABELS, JOB_STATUS_ORDER,
 } from "@/components/job-item-dialog";
-import { HabitRow } from "@/components/habit-tracker";
+import { HabitRow, computeBestStreak } from "@/components/habit-tracker";
 import { logActivity } from "@/lib/activity";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
