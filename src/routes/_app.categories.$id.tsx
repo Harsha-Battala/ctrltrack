@@ -26,7 +26,7 @@ import {
   JobItemDialog, type JobItemDraft, type JobStatus,
   JOB_STATUS_LABELS, JOB_STATUS_ORDER,
 } from "@/components/job-item-dialog";
-import { HabitRow } from "@/components/habit-tracker";
+import { HabitRow, computeBestStreak } from "@/components/habit-tracker";
 import { logActivity } from "@/lib/activity";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
@@ -263,8 +263,13 @@ function CategoryDetail() {
 
   // ---------- Habits overview stats ----------
   const habitOverview = useMemo(() => {
-    if (!isHabits || !items.length) return { avgCompletion: 0, totalStreakDays: 0 };
+    if (!isHabits || !items.length) {
+      return { avgCompletion: 0, totalStreakDays: 0, doneToday: 0, bestStreak: 0 };
+    }
+    const todayKey = format(new Date(), "yyyy-MM-dd");
     let sum = 0;
+    let doneToday = 0;
+    let bestStreak = 0;
     (items as any[]).forEach((i) => {
       const logged = logsByItem.get(i.id) ?? new Set<string>();
       let count = 0;
@@ -274,9 +279,17 @@ function CategoryDetail() {
         if (logged.has(format(dt, "yyyy-MM-dd"))) count++;
       }
       sum += Math.round((count / 30) * 100);
+      if (logged.has(todayKey)) doneToday++;
+      bestStreak = Math.max(bestStreak, computeBestStreak(logged));
     });
-    return { avgCompletion: Math.round(sum / items.length), totalStreakDays: habitLogs.length };
+    return {
+      avgCompletion: Math.round(sum / items.length),
+      totalStreakDays: habitLogs.length,
+      doneToday,
+      bestStreak,
+    };
   }, [isHabits, items, logsByItem, habitLogs]);
+
 
   if (!category) return <div className="text-muted-foreground">Loading…</div>;
   const Icon = getIcon(category.icon);
@@ -308,8 +321,37 @@ function CategoryDetail() {
             </Button>
           </div>
           {!isJobs && !isHabits && <Progress value={pct} className="mt-4 h-2" />}
+          {isHabits && total > 0 && (
+            <div className="mt-4">
+              <div className="mb-1.5 flex items-center justify-between text-xs text-muted-foreground">
+                <span>Today's check-ins</span>
+                <span className="font-semibold text-foreground">{habitOverview.doneToday}/{total}</span>
+              </div>
+              <Progress value={total ? (habitOverview.doneToday / total) * 100 : 0} className="h-2" />
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {isHabits && total > 0 && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: "Done today", value: `${habitOverview.doneToday}/${total}` },
+            { label: "Avg consistency", value: `${habitOverview.avgCompletion}%` },
+            { label: "Longest streak", value: `${habitOverview.bestStreak}d` },
+            { label: "Total check-ins", value: habitOverview.totalStreakDays },
+          ].map((s) => (
+            <Card key={s.label} className="habit-card border-border bg-gradient-surface">
+              <CardContent className="p-3 text-center">
+                <p className="text-2xl font-bold">{s.value}</p>
+                <p className="text-xs text-muted-foreground">{s.label}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+
 
       {isJobs && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
