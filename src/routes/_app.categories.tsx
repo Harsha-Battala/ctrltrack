@@ -1,7 +1,9 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Plus, Search, MoreVertical, Trash2, Edit2, Sparkles } from "lucide-react";
+import { Plus, Search, MoreVertical, Trash2, Edit2, Sparkles, FolderKanban } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
