@@ -103,8 +103,9 @@ function AppShell() {
                         </SidebarMenuItem>
                       );
                     })}
-                  </SidebarGroupContent>
-                </SidebarMenu>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+
               </SidebarGroup>
             ))}
           </SidebarContent>
