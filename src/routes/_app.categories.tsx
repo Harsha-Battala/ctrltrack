@@ -1,7 +1,9 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Plus, Search, MoreVertical, Trash2, Edit2, Sparkles } from "lucide-react";
+import { Plus, Search, MoreVertical, Trash2, Edit2, Sparkles, FolderKanban } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -113,20 +115,23 @@ function CategoriesList() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Categories</h1>
-          <p className="text-muted-foreground">Your personal life & career operating system.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={setupStarters} disabled={seeding}>
-            <Sparkles className="mr-1 h-4 w-4" /> {seeding ? "Setting up…" : "Setup Starter Categories"}
-          </Button>
-          <Button onClick={() => setCreating(true)} className="bg-gradient-primary shadow-elegant">
-            <Plus className="mr-1 h-4 w-4" /> New category
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        icon={FolderKanban}
+        eyebrow="Life OS"
+        title="Categories"
+        description="Your personal life & career operating system."
+        actions={
+          <>
+            <Button variant="outline" onClick={setupStarters} disabled={seeding}>
+              <Sparkles className="mr-1 h-4 w-4" /> {seeding ? "Setting up…" : "Setup starters"}
+            </Button>
+            <Button onClick={() => setCreating(true)} className="bg-gradient-primary shadow-elegant hover-scale">
+              <Plus className="mr-1 h-4 w-4" /> New category
+            </Button>
+          </>
+        }
+      />
+
 
       <div className="relative max-w-md">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

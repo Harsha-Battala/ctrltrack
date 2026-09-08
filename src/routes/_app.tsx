@@ -9,6 +9,7 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -16,6 +17,7 @@ import {
   SidebarTrigger,
   SidebarHeader,
   SidebarFooter,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { toast } from "sonner";
 import { AiPet } from "@/components/ai-pet";
@@ -24,13 +26,28 @@ export const Route = createFileRoute("/_app")({
   component: AppShell,
 });
 
-const NAV = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/categories", label: "Categories", icon: FolderKanban },
-  { to: "/coach", label: "AI Coach", icon: Sparkles },
-  { to: "/activity", label: "Activity", icon: Activity },
-  { to: "/profile", label: "Profile", icon: User },
+const NAV_GROUPS = [
+  {
+    label: "Overview",
+    items: [
+      { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/activity", label: "Activity", icon: Activity },
+    ],
+  },
+  {
+    label: "Life OS",
+    items: [{ to: "/categories", label: "Categories", icon: FolderKanban }],
+  },
+  {
+    label: "Intelligence",
+    items: [{ to: "/coach", label: "AI Coach", icon: Sparkles }],
+  },
+  {
+    label: "Account",
+    items: [{ to: "/profile", label: "Profile", icon: User }],
+  },
 ];
+
 
 function AppShell() {
   const { user, loading, signOut } = useAuth();
@@ -60,31 +77,45 @@ function AppShell() {
             </Link>
           </SidebarHeader>
           <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {NAV.map((item) => {
-                    const active = pathname === item.to || pathname.startsWith(item.to + "/");
-                    return (
-                      <SidebarMenuItem key={item.to}>
-                        <SidebarMenuButton asChild isActive={active} tooltip={item.label}>
-                          <Link to={item.to}>
-                            <item.icon />
-                            <span>{item.label}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+            {NAV_GROUPS.map((group) => (
+              <SidebarGroup key={group.label}>
+                <SidebarGroupLabel className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70">
+                  {group.label}
+                </SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {group.items.map((item) => {
+                      const active = pathname === item.to || pathname.startsWith(item.to + "/");
+                      return (
+                        <SidebarMenuItem key={item.to}>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={active}
+                            tooltip={item.label}
+                            className="nav-item"
+                            data-active={active}
+                          >
+                            <Link to={item.to}>
+                              <item.icon />
+                              <span>{item.label}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    })}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+
+              </SidebarGroup>
+            ))}
           </SidebarContent>
           <SidebarFooter>
+            <SidebarSeparator />
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   tooltip="Sign out"
+                  className="nav-item"
                   onClick={async () => {
                     await signOut();
                     toast.success("Signed out");
@@ -97,6 +128,7 @@ function AppShell() {
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarFooter>
+
         </Sidebar>
 
         <div className="flex min-h-screen flex-1 flex-col">
