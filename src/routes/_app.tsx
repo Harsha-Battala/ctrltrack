@@ -77,31 +77,44 @@ function AppShell() {
             </Link>
           </SidebarHeader>
           <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {NAV.map((item) => {
-                    const active = pathname === item.to || pathname.startsWith(item.to + "/");
-                    return (
-                      <SidebarMenuItem key={item.to}>
-                        <SidebarMenuButton asChild isActive={active} tooltip={item.label}>
-                          <Link to={item.to}>
-                            <item.icon />
-                            <span>{item.label}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
+            {NAV_GROUPS.map((group) => (
+              <SidebarGroup key={group.label}>
+                <SidebarGroupLabel className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/70">
+                  {group.label}
+                </SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {group.items.map((item) => {
+                      const active = pathname === item.to || pathname.startsWith(item.to + "/");
+                      return (
+                        <SidebarMenuItem key={item.to}>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={active}
+                            tooltip={item.label}
+                            className="nav-item"
+                            data-active={active}
+                          >
+                            <Link to={item.to}>
+                              <item.icon />
+                              <span>{item.label}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    })}
+                  </SidebarGroupContent>
                 </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+              </SidebarGroup>
+            ))}
           </SidebarContent>
           <SidebarFooter>
+            <SidebarSeparator />
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   tooltip="Sign out"
+                  className="nav-item"
                   onClick={async () => {
                     await signOut();
                     toast.success("Signed out");
@@ -114,6 +127,7 @@ function AppShell() {
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarFooter>
+
         </Sidebar>
 
         <div className="flex min-h-screen flex-1 flex-col">
