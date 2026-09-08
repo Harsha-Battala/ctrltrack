@@ -9,6 +9,7 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -16,6 +17,7 @@ import {
   SidebarTrigger,
   SidebarHeader,
   SidebarFooter,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { toast } from "sonner";
 import { AiPet } from "@/components/ai-pet";
@@ -24,13 +26,28 @@ export const Route = createFileRoute("/_app")({
   component: AppShell,
 });
 
-const NAV = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/categories", label: "Categories", icon: FolderKanban },
-  { to: "/coach", label: "AI Coach", icon: Sparkles },
-  { to: "/activity", label: "Activity", icon: Activity },
-  { to: "/profile", label: "Profile", icon: User },
+const NAV_GROUPS = [
+  {
+    label: "Overview",
+    items: [
+      { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/activity", label: "Activity", icon: Activity },
+    ],
+  },
+  {
+    label: "Life OS",
+    items: [{ to: "/categories", label: "Categories", icon: FolderKanban }],
+  },
+  {
+    label: "Intelligence",
+    items: [{ to: "/coach", label: "AI Coach", icon: Sparkles }],
+  },
+  {
+    label: "Account",
+    items: [{ to: "/profile", label: "Profile", icon: User }],
+  },
 ];
+
 
 function AppShell() {
   const { user, loading, signOut } = useAuth();
