@@ -4,6 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { formatDistanceToNow } from "date-fns";
+import { Activity as ActivityIcon } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+
 
 export const Route = createFileRoute("/_app/activity")({
   head: () => ({ meta: [{ title: "Activity — CtrlTrack" }] }),
