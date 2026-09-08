@@ -25,17 +25,20 @@ function ActivityFeed() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Activity</h1>
-          <p className="text-muted-foreground">Everything you've done, in one timeline.</p>
-        </div>
-        {activities.length > 0 && (
-          <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-primary">
-            {activities.length} events
-          </span>
-        )}
-      </div>
+      <PageHeader
+        icon={ActivityIcon}
+        eyebrow="Overview"
+        title="Activity"
+        description="Everything you've done, in one timeline."
+        actions={
+          activities.length > 0 ? (
+            <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-primary">
+              {activities.length} events
+            </span>
+          ) : null
+        }
+      />
+
       {!activities.length ? (
         <Card className="border-dashed border-border bg-transparent">
           <CardContent className="grid place-items-center p-12 text-center text-muted-foreground">
