@@ -13,11 +13,13 @@ export type ItemDraft = {
   title: string;
   description: string;
   priority: "low" | "medium" | "high";
+  recurring?: boolean;
 };
 
 export function ItemDialog({
-  open, onOpenChange, initial, onSubmit, title,
+  open, onOpenChange, initial, onSubmit, title, lockRecurring = false,
 }: {
+  lockRecurring?: boolean;
   open: boolean;
   onOpenChange: (v: boolean) => void;
   initial?: Partial<ItemDraft>;
@@ -27,6 +29,7 @@ export function ItemDialog({
   const [itTitle, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
+  const [recurring, setRecurring] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -34,6 +37,7 @@ export function ItemDialog({
       setTitle(initial?.title ?? "");
       setDescription(initial?.description ?? "");
       setPriority((initial?.priority as any) ?? "medium");
+      setRecurring(lockRecurring || !!initial?.recurring);
     }
   }, [open, initial]);
 
@@ -63,6 +67,17 @@ export function ItemDialog({
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-1.5">
+            <Label>Repeat</Label>
+            <Select value={recurring ? "recurring" : "once"} onValueChange={(v) => setRecurring(v === "recurring")} disabled={lockRecurring}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="once">One-time</SelectItem>
+                <SelectItem value="recurring">Recurring (daily)</SelectItem>
+              </SelectContent>
+            </Select>
+            {lockRecurring && <p className="text-xs text-muted-foreground">Habits always repeat daily.</p>}
+          </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
@@ -71,7 +86,7 @@ export function ItemDialog({
             className="bg-gradient-primary"
             onClick={async () => {
               setBusy(true);
-              await onSubmit({ id: initial?.id, title: itTitle.trim(), description, priority });
+              await onSubmit({ id: initial?.id, title: itTitle.trim(), description, priority, recurring: lockRecurring || recurring });
               setBusy(false);
               onOpenChange(false);
             }}

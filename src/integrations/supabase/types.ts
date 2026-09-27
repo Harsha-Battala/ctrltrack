@@ -200,6 +200,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          is_recurring: boolean
           job_applied_date: string | null
           job_company: string | null
           job_resume_sent: boolean
@@ -217,6 +218,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_recurring?: boolean
           job_applied_date?: string | null
           job_company?: string | null
           job_resume_sent?: boolean
@@ -234,6 +236,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_recurring?: boolean
           job_applied_date?: string | null
           job_company?: string | null
           job_resume_sent?: boolean
