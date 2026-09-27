@@ -46,6 +46,14 @@ function isHabitsCategory(name: string | undefined) {
   return (name ?? "").trim().toLowerCase() === "habits";
 }
 
+function isDailyGoalsCategory(name: string | undefined) {
+  return (name ?? "").trim().toLowerCase() === "daily goals";
+}
+
+function isCreatedToday(ts: string) {
+  return format(new Date(ts), "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+}
+
 function CategoryDetail() {
   const { id } = Route.useParams();
   const { user } = useAuth();
@@ -80,15 +88,29 @@ function CategoryDetail() {
 
   const isJobs = isJobsCategory(category?.name);
   const isHabits = isHabitsCategory(category?.name);
+  const isDailyGoals = isDailyGoalsCategory(category?.name);
+  const isRecurringItem = (i: any) => isHabits || !!i.is_recurring;
+
+  // Daily Goals: one-time tasks belong to the day they were created; older days are hidden (not deleted).
+  const visibleItems = useMemo(
+    () => (isDailyGoals ? (items as any[]).filter((i) => isRecurringItem(i) || isCreatedToday(i.created_at)) : (items as any[])),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, isDailyGoals, isHabits],
+  );
+  const recurringIds = useMemo(
+    () => (isJobs ? [] : visibleItems.filter(isRecurringItem).map((i) => i.id)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [visibleItems, isJobs, isHabits],
+  );
 
   const { data: habitLogs = [] } = useQuery({
-    queryKey: ["habit-logs", id, items.map((i: any) => i.id)],
-    enabled: !!user && isHabits && items.length > 0,
+    queryKey: ["habit-logs", id, recurringIds],
+    enabled: !!user && recurringIds.length > 0,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("habit_logs")
         .select("*")
-        .in("item_id", items.map((i: any) => i.id));
+        .in("item_id", recurringIds);
       if (error) throw error;
       return data ?? [];
     },
@@ -104,7 +126,7 @@ function CategoryDetail() {
   }, [habitLogs]);
 
   const filtered = useMemo(() => {
-    let r = items as any[];
+    let r = visibleItems;
     if (search) {
       r = r.filter((i) =>
         i.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -125,10 +147,12 @@ function CategoryDetail() {
       }
     });
     return r;
-  }, [items, search, filter, sort, isJobs, isHabits]);
+  }, [visibleItems, search, filter, sort, isJobs, isHabits]);
 
-  const total = items.length;
-  const done = items.filter((i: any) => i.completed).length;
+  const filteredRecurring = filtered.filter((i: any) => !isJobs && isRecurringItem(i));
+  const filteredOnce = filtered.filter((i: any) => isJobs || !isRecurringItem(i));
+  const total = visibleItems.length;
+  const done = visibleItems.filter((i: any) => i.completed).length;
   const pct = total ? Math.round((done / total) * 100) : 0;
 
   function invalidateAll() {
@@ -145,6 +169,7 @@ function CategoryDetail() {
     if (draft.id) {
       const { error } = await supabase.from("items").update({
         title: draft.title, description: draft.description, priority: draft.priority,
+        is_recurring: isHabits || !!draft.recurring,
       }).eq("id", draft.id);
       if (error) return toast.error(error.message);
       await logActivity({ userId: user.id, action: "updated", entityType: "item", entityId: draft.id, entityTitle: draft.title, categoryId: category.id, categoryName: category.name });
@@ -152,6 +177,7 @@ function CategoryDetail() {
     } else {
       const { data, error } = await supabase.from("items").insert({
         user_id: user.id, category_id: id, title: draft.title, description: draft.description, priority: draft.priority,
+        is_recurring: isHabits || !!draft.recurring,
       }).select().single();
       if (error) return toast.error(error.message);
       await logActivity({ userId: user.id, action: "created", entityType: "item", entityId: data.id, entityTitle: draft.title, categoryId: category.id, categoryName: category.name });
@@ -398,7 +424,7 @@ function CategoryDetail() {
         <Card className="border-dashed border-border bg-transparent">
           <CardContent className="grid place-items-center gap-3 p-12 text-center">
             <p className="text-muted-foreground">
-              {isJobs ? "No applications logged yet." : isHabits ? "No habits yet." : "No items yet."}
+              {isJobs ? "No applications logged yet." : isHabits ? "No habits yet." : isDailyGoals ? "No goals for today yet — fresh list, fresh start." : "No items yet."}
             </p>
             <Button onClick={() => setCreating(true)} className="bg-gradient-primary">
               <Plus className="mr-1 h-4 w-4" /> {isJobs ? "Log your first application" : isHabits ? "Add your first habit" : "Add your first item"}
@@ -466,14 +492,25 @@ function CategoryDetail() {
               item={it}
               loggedDates={logsByItem.get(it.id) ?? new Set()}
               onToggleDay={(dateKey) => toggleHabitDay(it.id, dateKey)}
-              onEdit={() => setEditing({ id: it.id, title: it.title, description: it.description ?? "", priority: it.priority })}
+              onEdit={() => setEditing({ id: it.id, title: it.title, description: it.description ?? "", priority: it.priority, recurring: true })}
               onDelete={() => setDeleteId(it.id)}
             />
           ))}
         </div>
       ) : (
+        <div className="space-y-3">
+          {filteredRecurring.map((it: any) => (
+            <HabitRow
+              key={it.id}
+              item={it}
+              loggedDates={logsByItem.get(it.id) ?? new Set()}
+              onToggleDay={(dateKey) => toggleHabitDay(it.id, dateKey)}
+              onEdit={() => setEditing({ id: it.id, title: it.title, description: it.description ?? "", priority: it.priority, recurring: true })}
+              onDelete={() => setDeleteId(it.id)}
+            />
+          ))}
         <div className="space-y-2">
-          {filtered.map((it: any) => (
+          {filteredOnce.map((it: any) => (
             <Card key={it.id} className="border-border bg-card transition hover:border-primary/40">
               <CardContent className="flex items-start gap-3 p-4">
                 <Checkbox checked={it.completed} onCheckedChange={() => toggle(it)} className="mt-1" />
@@ -490,7 +527,7 @@ function CategoryDetail() {
                     <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setEditing({ id: it.id, title: it.title, description: it.description ?? "", priority: it.priority })}>
+                    <DropdownMenuItem onClick={() => setEditing({ id: it.id, title: it.title, description: it.description ?? "", priority: it.priority, recurring: false })}>
                       <Edit2 className="mr-2 h-4 w-4" /> Edit
                     </DropdownMenuItem>
                     <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteId(it.id)}>
@@ -502,6 +539,7 @@ function CategoryDetail() {
             </Card>
           ))}
         </div>
+        </div>
       )}
 
       {isJobs ? (
@@ -511,8 +549,8 @@ function CategoryDetail() {
         </>
       ) : (
         <>
-          <ItemDialog open={creating} onOpenChange={setCreating} title={isHabits ? "New habit" : "New item"} onSubmit={saveItem} />
-          <ItemDialog open={!!editing} onOpenChange={(v) => !v && setEditing(null)} initial={editing ?? undefined} title={isHabits ? "Edit habit" : "Edit item"} onSubmit={saveItem} />
+          <ItemDialog open={creating} onOpenChange={setCreating} title={isHabits ? "New habit" : "New item"} onSubmit={saveItem} lockRecurring={isHabits} />
+          <ItemDialog open={!!editing} onOpenChange={(v) => !v && setEditing(null)} initial={editing ?? undefined} title={isHabits ? "Edit habit" : "Edit item"} onSubmit={saveItem} lockRecurring={isHabits} />
         </>
       )}
 
