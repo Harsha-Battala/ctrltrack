@@ -26,6 +26,8 @@ That kind of cross-domain synthesis is the core differentiator from a generic ch
 - Email + Google authentication
 - Dashboard with live stats, progress cards, and an activity feed
 - Unlimited custom categories, plus starter categories: Jobs Applied, Learning, Certifications, Goals, Habits, Daily Goals, Fitness, General Tasks
+- **Recurring daily tasks in any category** — flip "Repeats daily" on any task (Habits are always recurring) and it uses the shared check-in engine: one streak system, one tick grid, no duplicates
+- **Daily Goals** — one-time tasks that appear only on the day they were created, so the list starts fresh every morning (older days are hidden, not deleted)
 - Full activity history (created / updated / completed / deleted)
 - Profile with avatar, name, and career goal
 
@@ -36,7 +38,7 @@ Rather than treating every category as a generic list, two categories get purpos
   Company, role, application status (Applied → Recruiter Action → Interview → Reviewed → Offer / Rejected), resume-sent tracking, and applied date. A live status-count strip shows your pipeline at a glance, and each application can be moved between stages with one click.
 
 - **Habits — daily tick tracker**
-  A 14-day tick grid per habit, live streak counting, and a rolling 30-day consistency percentage — so habits are tracked the way a real habit tracker works, not as a one-off checkbox.
+  Per-habit 7 / 14 / 30-day tick grids with weekday captions and month separators, heatmap-style intensity shading, live streak flame and best-streak trophy badges, a pulsing halo on today's cell, animated check-in bursts, a quick "Log today / Done today" action, and a summary strip (done today, average consistency, longest streak, total check-ins). Any recurring task in another category gets the same tracker experience.
 
 ### AI Coach — the agent layer
 The Coach is a genuine AI agent, not a templated stats page. On each run it:
