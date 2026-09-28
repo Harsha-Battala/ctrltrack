@@ -157,9 +157,19 @@ The `Jobs Applied` category renders a specialised view: status counters
 (applied → offer/rejected), company/role fields, resume-sent flag and a
 dedicated `JobItemDialog`.
 
-### 6.4 Habits (see §7 for the latest UI upgrade)
+### 6.4 Recurring tasks & Daily Goals
+- Any task in any category can be set to "Repeats daily" (`items.is_recurring`,
+  off by default; Habits are always recurring). Recurring tasks reuse the shared
+  `habit_logs` check-in engine, so streaks and tick grids work everywhere with
+  one system and no duplicates.
+- Daily Goals are one-time tasks scoped to their creation day (local date):
+  they show only on that day and are hidden afterwards, never deleted. No cron
+  is needed — filtering happens by date at read time.
+
+### 6.5 Habits (see §7 for the latest UI upgrade)
 The `Habits` category renders `HabitRow` cards backed by `habit_logs`, with
 streaks, 30-day consistency and per-day check-ins.
+
 
 ### 6.5 AI Coach
 `src/lib/coach.ts` is a deterministic rule engine that computes a
