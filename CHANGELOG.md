@@ -2,6 +2,21 @@
 
 Chronological record of everything built so far. Newest first.
 
+## Recurring tasks engine
+- "Repeats daily" toggle on tasks in any category (off by default; Habits always recurring).
+- Shared `habit_logs` check-in engine now powers streaks and tick grids for all
+  recurring tasks, not just Habits.
+- Daily Goals: one-time tasks shown only on their creation day (local date),
+  hidden afterwards — not deleted. Fresh daily list with no cron needed.
+
+## App reorganization
+- Sidebar grouped into Overview / Life OS / Intelligence / Account with an
+  animated active-marker line.
+- Shared `PageHeader` across pages: glowing icon chip, section eyebrow, title,
+  description and sliding action buttons.
+- Custom themed scrollbars and page-enter route transitions.
+
+
 ## Habits experience overhaul
 - Animated check-in cells: spring scale-pop + ember ripple burst on tick.
 - Heatmap-style intensity — completed days shade deeper with longer runs.
