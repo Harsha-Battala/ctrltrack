@@ -501,7 +501,12 @@ function CategoryDetail() {
           ))}
         </div>
       ) : isHabits ? (
-        <div className="space-y-3">
+        <HabitRangeProvider>
+          <div className="flex items-center justify-between gap-2">
+            <p className="label-bright">Daily habits</p>
+            <HabitRangeSwitch />
+          </div>
+          <div className="space-y-3">
           {filtered.map((it: any) => (
             <HabitRow
               key={it.id}
@@ -512,9 +517,11 @@ function CategoryDetail() {
               onDelete={() => setDeleteId(it.id)}
             />
           ))}
-        </div>
+          </div>
+        </HabitRangeProvider>
       ) : (
         <div className="space-y-3">
+          {filteredRecurring.length > 0 && <p className="label-bright">Daily habits</p>}
           {filteredRecurring.map((it: any) => (
             <HabitRow
               key={it.id}
@@ -526,8 +533,9 @@ function CategoryDetail() {
             />
           ))}
         <div className="space-y-2">
+          {filteredOnce.length > 0 && filteredRecurring.length > 0 && <p className="label-bright pt-2">One-time tasks</p>}
           {filteredOnce.map((it: any) => (
-            <Card key={it.id} className="border-border bg-card transition hover:border-primary/40">
+            <Card key={it.id} className="item-in border-border bg-card transition hover:border-primary/40">
               <CardContent className="flex items-start gap-3 p-4">
                 <Checkbox checked={it.completed} onCheckedChange={() => toggle(it)} className="mt-1" />
                 <div className="min-w-0 flex-1">
