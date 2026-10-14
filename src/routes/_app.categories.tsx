@@ -203,8 +203,9 @@ function CategoriesList() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  <Progress value={pct} className="progress-cat progress-fill mt-auto h-1.5 pt-0" style={{ marginTop: "auto" }} />
-                  <div className="h-4" />
+                  <div className="mt-auto pt-4">
+                    <Progress value={pct} className="progress-cat progress-fill h-1.5" />
+                  </div>
                 </CardContent>
               </Card>
             );
