@@ -172,8 +172,8 @@ function CategoriesList() {
             const pct = total ? Math.round((done / total) * 100) : 0;
             const Icon = getIcon(c.icon);
             return (
-              <Card key={c.id} className="group relative border-border bg-card transition-all hover:-translate-y-0.5 hover:shadow-card">
-                <CardContent className="p-5">
+              <Card key={c.id} className="cat-card group relative border-border bg-card" style={{ "--cat": c.color } as React.CSSProperties}>
+                <CardContent className="flex h-full flex-col p-5">
                   <div className="flex items-start justify-between gap-3">
                     <Link to="/categories/$id" params={{ id: c.id }} className="flex flex-1 items-start gap-3">
                       <div className="grid h-12 w-12 place-items-center rounded-lg" style={{ background: `${c.color}22`, color: c.color }}>
@@ -203,7 +203,9 @@ function CategoriesList() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  <Progress value={pct} className="mt-4 h-1.5" />
+                  <div className="mt-auto pt-4">
+                    <Progress value={pct} className="progress-cat progress-fill h-1.5" />
+                  </div>
                 </CardContent>
               </Card>
             );

@@ -11,8 +11,10 @@ import { getIcon } from "@/lib/icons";
 import { ensureStarterCategories } from "@/lib/starter-categories";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { computeCoachStats } from "@/lib/coach";
+import { useCountUp } from "@/lib/use-count-up";
+import { logActivity } from "@/lib/activity";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — CtrlTrack" }] }),
@@ -245,7 +247,7 @@ function Dashboard() {
                 const Icon = getIcon(c.icon);
                 return (
                   <Link key={c.id} to="/categories/$id" params={{ id: c.id }}>
-                    <Card className="border-border bg-card transition-all hover:-translate-y-0.5 hover:shadow-card">
+                    <Card className="cat-card border-border bg-card" style={{ "--cat": c.color } as React.CSSProperties}>
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
                           <div className="grid h-10 w-10 place-items-center rounded-lg" style={{ background: `${c.color}22`, color: c.color }}>
@@ -254,7 +256,7 @@ function Dashboard() {
                           <div className="min-w-0 flex-1">
                             <h3 className="truncate font-semibold">{c.name}</h3>
                             <p className="text-xs text-muted-foreground">{done}/{total} done</p>
-                            <Progress value={pct} className="mt-2 h-1.5" />
+                            <Progress value={pct} className="progress-cat progress-fill mt-2 h-1.5" />
                           </div>
                         </div>
                       </CardContent>
@@ -297,12 +299,13 @@ function StatCard({ label, value, icon: Icon, tint }: { label: string; value: nu
     success: "bg-success/15 text-success",
     warning: "bg-warning/15 text-warning",
   };
+  const display = useCountUp(value);
   return (
-    <Card className="group border-border bg-gradient-surface transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-card">
+    <Card className="card-lift group border-border bg-gradient-surface hover:border-primary/40">
       <CardContent className="flex items-center justify-between p-5">
         <div>
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
-          <p className="mt-1 text-3xl font-bold tabular-nums">{value}</p>
+          <p className="label-bright">{label}</p>
+          <p className="mt-1 text-3xl font-bold tabular-nums">{display}</p>
         </div>
         <div className={`grid h-10 w-10 place-items-center rounded-lg transition-transform duration-300 group-hover:scale-110 ${map[tint]}`}>
           <Icon className="h-5 w-5" />

@@ -26,7 +26,8 @@ import {
   JobItemDialog, type JobItemDraft, type JobStatus,
   JOB_STATUS_LABELS, JOB_STATUS_ORDER,
 } from "@/components/job-item-dialog";
-import { HabitRow, computeBestStreak } from "@/components/habit-tracker";
+import { HabitRow, HabitRangeProvider, HabitRangeSwitch, computeBestStreak } from "@/components/habit-tracker";
+import { Skeleton } from "@/components/ui/skeleton";
 import { logActivity } from "@/lib/activity";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
@@ -317,7 +318,18 @@ function CategoryDetail() {
   }, [isHabits, items, logsByItem, habitLogs]);
 
 
-  if (!category) return <div className="text-muted-foreground">Loading…</div>;
+  if (!category) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-32 w-full" />
+        <div className="space-y-3">
+          <Skeleton className="h-36 w-full" />
+          <Skeleton className="h-36 w-full" />
+        </div>
+      </div>
+    );
+  }
   const Icon = getIcon(category.icon);
 
   return (
@@ -342,11 +354,15 @@ function CategoryDetail() {
                     : `${done}/${total} items completed · ${pct}%`}
               </p>
             </div>
-            <Button onClick={() => setCreating(true)} className="bg-gradient-primary shadow-elegant">
+            <Button onClick={() => setCreating(true)} className="bg-gradient-primary btn-glow">
               <Plus className="mr-1 h-4 w-4" /> {isJobs ? "Log application" : isHabits ? "Add habit" : "Add item"}
             </Button>
           </div>
-          {!isJobs && !isHabits && <Progress value={pct} className="mt-4 h-2" />}
+          {!isJobs && !isHabits && (
+            <div style={{ "--cat": category.color } as React.CSSProperties}>
+              <Progress value={pct} className="progress-cat progress-fill mt-4 h-2" />
+            </div>
+          )}
           {isHabits && total > 0 && (
             <div className="mt-4">
               <div className="mb-1.5 flex items-center justify-between text-xs text-muted-foreground">
@@ -485,7 +501,12 @@ function CategoryDetail() {
           ))}
         </div>
       ) : isHabits ? (
-        <div className="space-y-3">
+        <HabitRangeProvider>
+          <div className="flex items-center justify-between gap-2">
+            <p className="label-bright">Daily habits</p>
+            <HabitRangeSwitch />
+          </div>
+          <div className="space-y-3">
           {filtered.map((it: any) => (
             <HabitRow
               key={it.id}
@@ -496,9 +517,11 @@ function CategoryDetail() {
               onDelete={() => setDeleteId(it.id)}
             />
           ))}
-        </div>
+          </div>
+        </HabitRangeProvider>
       ) : (
         <div className="space-y-3">
+          {filteredRecurring.length > 0 && <p className="label-bright">Daily habits</p>}
           {filteredRecurring.map((it: any) => (
             <HabitRow
               key={it.id}
@@ -510,8 +533,9 @@ function CategoryDetail() {
             />
           ))}
         <div className="space-y-2">
+          {filteredOnce.length > 0 && filteredRecurring.length > 0 && <p className="label-bright pt-2">One-time tasks</p>}
           {filteredOnce.map((it: any) => (
-            <Card key={it.id} className="border-border bg-card transition hover:border-primary/40">
+            <Card key={it.id} className="item-in border-border bg-card transition hover:border-primary/40">
               <CardContent className="flex items-start gap-3 p-4">
                 <Checkbox checked={it.completed} onCheckedChange={() => toggle(it)} className="mt-1" />
                 <div className="min-w-0 flex-1">
