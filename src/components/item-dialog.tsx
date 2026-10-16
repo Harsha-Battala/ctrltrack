@@ -31,6 +31,7 @@ export function ItemDialog({
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
   const [recurring, setRecurring] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [touched, setTouched] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -38,8 +39,11 @@ export function ItemDialog({
       setDescription(initial?.description ?? "");
       setPriority((initial?.priority as any) ?? "medium");
       setRecurring(lockRecurring || !!initial?.recurring);
+      setTouched(false);
     }
   }, [open, initial]);
+
+  const titleEmpty = !itTitle.trim();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -50,7 +54,16 @@ export function ItemDialog({
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="title">Title</Label>
-            <Input id="title" value={itTitle} onChange={(e) => setTitle(e.target.value)} placeholder="What needs to happen?" />
+            <Input
+              id="title"
+              value={itTitle}
+              onChange={(e) => setTitle(e.target.value)}
+              onBlur={() => setTouched(true)}
+              placeholder={lockRecurring ? "e.g., Read 20 pages" : "e.g., Renew passport"}
+            />
+            {touched && titleEmpty && (
+              <p className="text-xs text-destructive">A title is required.</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="desc">Description</Label>
@@ -82,8 +95,8 @@ export function ItemDialog({
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
-            disabled={busy || !itTitle.trim()}
-            className="bg-gradient-primary"
+            disabled={busy || titleEmpty}
+            className="bg-gradient-primary btn-glow"
             onClick={async () => {
               setBusy(true);
               await onSubmit({ id: initial?.id, title: itTitle.trim(), description, priority, recurring: lockRecurring || recurring });
