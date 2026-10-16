@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -60,6 +61,7 @@ export function CommandPalette() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="top-[20%] translate-y-0 gap-0 p-0 sm:max-w-lg">
+        <VisuallyHidden><DialogTitle>Quick commands</DialogTitle></VisuallyHidden>
         <div className="flex items-center gap-2 border-b border-border px-4">
           <Search className="h-4 w-4 text-muted-foreground" />
           <Input
