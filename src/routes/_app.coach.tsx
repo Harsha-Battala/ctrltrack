@@ -13,7 +13,10 @@ import { useAuth } from "@/lib/auth-context";
 import { computeCoachStats, generateInsights, type Insight } from "@/lib/coach";
 import { getIcon } from "@/lib/icons";
 import { useState } from "react";
-import { runAiCoach, type AgentRunResult } from "@/lib/ai-coach-client";
+import { runAiCoach, type AgentRunResult, type AgentRecommendation } from "@/lib/ai-coach-client";
+import { Badge } from "@/components/ui/badge";
+import { ChevronDown, ChevronRight, Plus, X } from "lucide-react";
+import { toast } from "sonner";
 
 
 export const Route = createFileRoute("/_app/coach")({
@@ -108,38 +111,7 @@ function CoachPage() {
               </Button>
             </div>
             {agentError && <p className="text-sm text-destructive">{agentError}</p>}
-            {agentResult && (
-              <div className="space-y-4">
-                <Card className="border-border bg-card">
-                  <CardContent className="p-4">
-                    <p className="text-sm text-muted-foreground">{agentResult.summary}</p>
-                  </CardContent>
-                </Card>
-                <div>
-                  <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">
-                    Agent reasoning trace
-                  </p>
-                  <div className="space-y-1 text-xs text-muted-foreground">
-                    {agentResult.trace.map((t, idx) => (
-                      <div key={idx} className="rounded border border-border bg-card px-3 py-1.5">
-                        Called <span className="font-mono text-foreground">{t.name}</span>
-                        {" → "}{JSON.stringify(t.input)}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {agentResult.recommendations.map((r) => (
-                    <Card key={r.id} className="border-border bg-card">
-                      <CardContent className="p-5">
-                        <h3 className="font-semibold leading-snug">{r.title}</h3>
-                        <p className="mt-1.5 text-sm text-muted-foreground">{r.body}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
+            {agentResult && <AgentResultView result={agentResult} userId={user!.id} />}
           </section>
 
           <MetricsGrid stats={data.stats} />
@@ -244,6 +216,149 @@ function MetricsGrid({ stats }: { stats: ReturnType<typeof computeCoachStats> })
         </Card>
       ))}
     </section>
+  );
+}
+
+/* ---------- AI agent result: formatted summary, top-3 recs, collapsed trace ---------- */
+
+const PRIORITY_BADGE: Record<string, string> = {
+  high: "border-destructive/40 bg-destructive/15 text-destructive",
+  medium: "border-warning/40 bg-warning/15 text-warning",
+  low: "border-primary/40 bg-primary/15 text-primary",
+};
+
+function MarkdownSummary({ text }: { text: string }) {
+  const lines = text.split("\n").filter((l) => l.trim());
+  return (
+    <div className="space-y-1.5 text-sm">
+      {lines.map((line, i) => {
+        const t = line.trim();
+        if (t.startsWith("###")) return <h4 key={i} className="pt-1 font-semibold">{t.replace(/^#+\s*/, "")}</h4>;
+        if (t.startsWith("##")) return <h3 key={i} className="pt-1 text-base font-semibold">{t.replace(/^#+\s*/, "")}</h3>;
+        if (t.startsWith("#")) return <h3 key={i} className="pt-1 text-lg font-semibold">{t.replace(/^#+\s*/, "")}</h3>;
+        if (t.startsWith("- ") || t.startsWith("* ")) {
+          return (
+            <div key={i} className="flex gap-2 text-muted-foreground">
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+              <span>{inlineBold(t.slice(2))}</span>
+            </div>
+          );
+        }
+        return <p key={i} className="text-muted-foreground">{inlineBold(t)}</p>;
+      })}
+    </div>
+  );
+}
+
+function inlineBold(s: string): React.ReactNode {
+  const parts = s.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((p, i) =>
+    p.startsWith("**") && p.endsWith("**")
+      ? <strong key={i} className="font-semibold text-foreground">{p.slice(2, -2)}</strong>
+      : p,
+  );
+}
+
+function AgentResultView({ result, userId }: { result: AgentRunResult; userId: string }) {
+  const [showAll, setShowAll] = useState(false);
+  const [showTrace, setShowTrace] = useState(false);
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+
+  const rank = { high: 0, medium: 1, low: 2 } as const;
+  const recs = [...result.recommendations]
+    .filter((r) => !dismissed.has(r.id))
+    .sort((a, b) => rank[a.priority] - rank[b.priority]);
+  const top = recs.slice(0, 3);
+  const rest = recs.slice(3);
+
+  async function addAsTask(r: AgentRecommendation) {
+    const { data: cats } = await supabase.from("categories").select("id,name").eq("user_id", userId);
+    const target = (cats ?? []).find((c) => c.name.trim().toLowerCase() === "general tasks") ?? (cats ?? [])[0];
+    if (!target) return toast.error("Create a category first, then add tasks to it.");
+    const { error } = await supabase.from("items").insert({
+      user_id: userId, category_id: target.id, title: r.title, description: r.body, priority: r.priority,
+    });
+    if (error) return toast.error(error.message);
+    toast.success(`Added to ${target.name}`);
+    setDismissed((s) => new Set(s).add(r.id));
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-border bg-card">
+        <CardContent className="p-5">
+          <MarkdownSummary text={result.summary} />
+        </CardContent>
+      </Card>
+
+      {recs.length > 0 && (
+        <div className="space-y-3">
+          <p className="label-bright">Top recommendations</p>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {top.map((r) => (
+              <RecCard key={r.id} rec={r} onAdd={() => addAsTask(r)} onDismiss={() => setDismissed((s) => new Set(s).add(r.id))} />
+            ))}
+          </div>
+          {rest.length > 0 && (
+            <>
+              {showAll && (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {rest.map((r) => (
+                    <RecCard key={r.id} rec={r} onAdd={() => addAsTask(r)} onDismiss={() => setDismissed((s) => new Set(s).add(r.id))} />
+                  ))}
+                </div>
+              )}
+              <Button variant="ghost" size="sm" onClick={() => setShowAll((v) => !v)} className="gap-1 text-muted-foreground">
+                {showAll ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                {showAll ? "Show less" : `Show ${rest.length} more`}
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+
+      <div>
+        <button
+          onClick={() => setShowTrace((v) => !v)}
+          className="label-bright flex items-center gap-1.5 transition hover:text-foreground"
+        >
+          {showTrace ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+          Agent reasoning trace
+        </button>
+        {showTrace && (
+          <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+            {result.trace.map((t, idx) => (
+              <div key={idx} className="rounded border border-border bg-card px-3 py-1.5">
+                Called <span className="font-mono text-foreground">{t.name}</span>
+                {" → "}{JSON.stringify(t.input)}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RecCard({ rec, onAdd, onDismiss }: { rec: AgentRecommendation; onAdd: () => void; onDismiss: () => void }) {
+  return (
+    <Card className="card-lift border-border bg-card">
+      <CardContent className="flex h-full flex-col p-5">
+        <Badge variant="outline" className={`mb-2 w-fit capitalize ${PRIORITY_BADGE[rec.priority]}`}>
+          {rec.priority} priority
+        </Badge>
+        <h3 className="font-semibold leading-snug">{rec.title}</h3>
+        <p className="mt-1.5 flex-1 text-sm text-muted-foreground">{rec.body}</p>
+        <div className="mt-3 flex gap-2">
+          <Button size="sm" variant="outline" className="h-8 gap-1 hover:border-primary/60" onClick={onAdd}>
+            <Plus className="h-3.5 w-3.5" /> Add as task
+          </Button>
+          <Button size="sm" variant="ghost" className="h-8 gap-1 text-muted-foreground" onClick={onDismiss}>
+            <X className="h-3.5 w-3.5" /> Dismiss
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

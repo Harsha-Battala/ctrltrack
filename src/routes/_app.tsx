@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { toast } from "sonner";
 import { AiPet } from "@/components/ai-pet";
+import { CommandPalette } from "@/components/command-palette";
 
 export const Route = createFileRoute("/_app")({
   component: AppShell,
@@ -151,7 +152,7 @@ function AppShell() {
               {user.email}
             </div>
           </header>
-          <main className="relative flex-1 bg-hero p-4 md:p-8">
+          <main className="relative flex-1 bg-hero p-4 pb-24 md:p-8 md:pb-8">
             <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
             <div key={pathname} className="page-enter">
               <Outlet />
@@ -159,6 +160,32 @@ function AppShell() {
           </main>
         </div>
         <AiPet />
+        <CommandPalette />
+
+        {/* Mobile bottom navigation */}
+        <nav className="fixed inset-x-0 bottom-0 z-20 flex items-stretch justify-around border-t border-border bg-background/95 backdrop-blur md:hidden">
+          {[
+            { to: "/dashboard", label: "Home", icon: LayoutDashboard },
+            { to: "/categories", label: "Categories", icon: FolderKanban },
+            { to: "/coach", label: "Coach", icon: Sparkles },
+            { to: "/activity", label: "Activity", icon: Activity },
+            { to: "/profile", label: "Profile", icon: User },
+          ].map((item) => {
+            const active = pathname === item.to || pathname.startsWith(item.to + "/");
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition ${
+                  active ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                <item.icon className="h-5 w-5" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
     </SidebarProvider>
   );
