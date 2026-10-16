@@ -13,7 +13,10 @@ import { useAuth } from "@/lib/auth-context";
 import { computeCoachStats, generateInsights, type Insight } from "@/lib/coach";
 import { getIcon } from "@/lib/icons";
 import { useState } from "react";
-import { runAiCoach, type AgentRunResult } from "@/lib/ai-coach-client";
+import { runAiCoach, type AgentRunResult, type AgentRecommendation } from "@/lib/ai-coach-client";
+import { Badge } from "@/components/ui/badge";
+import { ChevronDown, ChevronRight, Plus, X } from "lucide-react";
+import { toast } from "sonner";
 
 
 export const Route = createFileRoute("/_app/coach")({
@@ -108,38 +111,7 @@ function CoachPage() {
               </Button>
             </div>
             {agentError && <p className="text-sm text-destructive">{agentError}</p>}
-            {agentResult && (
-              <div className="space-y-4">
-                <Card className="border-border bg-card">
-                  <CardContent className="p-4">
-                    <p className="text-sm text-muted-foreground">{agentResult.summary}</p>
-                  </CardContent>
-                </Card>
-                <div>
-                  <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">
-                    Agent reasoning trace
-                  </p>
-                  <div className="space-y-1 text-xs text-muted-foreground">
-                    {agentResult.trace.map((t, idx) => (
-                      <div key={idx} className="rounded border border-border bg-card px-3 py-1.5">
-                        Called <span className="font-mono text-foreground">{t.name}</span>
-                        {" → "}{JSON.stringify(t.input)}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {agentResult.recommendations.map((r) => (
-                    <Card key={r.id} className="border-border bg-card">
-                      <CardContent className="p-5">
-                        <h3 className="font-semibold leading-snug">{r.title}</h3>
-                        <p className="mt-1.5 text-sm text-muted-foreground">{r.body}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
+            {agentResult && <AgentResultView result={agentResult} userId={user!.id} />}
           </section>
 
           <MetricsGrid stats={data.stats} />
