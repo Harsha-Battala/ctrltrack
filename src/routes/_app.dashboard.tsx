@@ -146,6 +146,8 @@ function Dashboard() {
         <StatCard label="Pending" value={stats?.pending ?? 0} icon={Clock} tint="warning" />
       </section>
 
+      <TodaysFocus userId={user?.id} />
+
       {stats?.coach && (
         <section className="grid gap-4 md:grid-cols-4">
           <Card className="border-border bg-card md:col-span-2">
@@ -290,6 +292,92 @@ function Dashboard() {
         </div>
       </section>
     </div>
+  );
+}
+
+function TodaysFocus({ userId }: { userId?: string }) {
+  const qc = useQueryClient();
+  const todayKey = format(new Date(), "yyyy-MM-dd");
+
+  const { data: focus } = useQuery({
+    queryKey: ["today-focus", userId, todayKey],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data: cats } = await supabase.from("categories").select("id,name,color").eq("user_id", userId!);
+      const habitsCat = (cats ?? []).find((c) => c.name.trim().toLowerCase() === "habits");
+      const goalsCat = (cats ?? []).find((c) => c.name.trim().toLowerCase() === "daily goals");
+      const catIds = [habitsCat?.id, goalsCat?.id].filter(Boolean) as string[];
+      if (!catIds.length) return { habits: [] as any[], goals: [] as any[] };
+      const { data: items } = await supabase.from("items").select("*").in("category_id", catIds);
+      const habitItems = (items ?? []).filter((i: any) => i.category_id === habitsCat?.id);
+      const goalItems = (items ?? []).filter(
+        (i: any) => i.category_id === goalsCat?.id && !i.completed &&
+          (i.is_recurring || format(new Date(i.created_at), "yyyy-MM-dd") === todayKey),
+      );
+      const { data: logs } = habitItems.length
+        ? await supabase.from("habit_logs").select("item_id").in("item_id", habitItems.map((h: any) => h.id)).eq("log_date", todayKey)
+        : { data: [] as any[] };
+      const loggedIds = new Set((logs ?? []).map((l: any) => l.item_id));
+      return {
+        habits: habitItems.filter((h: any) => !loggedIds.has(h.id)),
+        goals: goalItems,
+        habitsCatId: habitsCat?.id,
+        goalsCatId: goalsCat?.id,
+      };
+    },
+  });
+
+  if (!focus || (!focus.habits.length && !focus.goals.length)) return null;
+
+  async function completeHabit(item: any) {
+    const { error } = await supabase.from("habit_logs").insert({ user_id: userId!, item_id: item.id, log_date: todayKey });
+    if (error) return toast.error(error.message);
+    await logActivity({ userId: userId!, action: "completed", entityType: "item", entityId: item.id, entityTitle: item.title, categoryId: (focus as any).habitsCatId, categoryName: "Habits" });
+    toast.success(`Nice! "${item.title}" logged`);
+    qc.invalidateQueries({ queryKey: ["today-focus"] });
+    qc.invalidateQueries({ queryKey: ["habit-logs"] });
+    qc.invalidateQueries({ queryKey: ["stats"] });
+  }
+
+  async function completeGoal(item: any) {
+    const { error } = await supabase.from("items").update({ completed: true, completed_at: new Date().toISOString() }).eq("id", item.id);
+    if (error) return toast.error(error.message);
+    await logActivity({ userId: userId!, action: "completed", entityType: "item", entityId: item.id, entityTitle: item.title, categoryId: (focus as any).goalsCatId, categoryName: "Daily Goals" });
+    toast.success(`Done: "${item.title}"`);
+    qc.invalidateQueries({ queryKey: ["today-focus"] });
+    qc.invalidateQueries({ queryKey: ["stats"] });
+  }
+
+  return (
+    <Card className="border-primary/30 bg-gradient-surface">
+      <CardContent className="p-5">
+        <div className="mb-3 flex items-center gap-2">
+          <Zap className="h-4 w-4 text-primary" />
+          <h3 className="font-semibold">Today's focus</h3>
+          <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-primary">
+            {focus.habits.length + focus.goals.length} left
+          </span>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {focus.habits.map((h: any) => (
+            <div key={h.id} className="item-in flex items-center justify-between gap-2 rounded-lg border border-border bg-background/40 px-3 py-2">
+              <span className="min-w-0 truncate text-sm">{h.title}</span>
+              <Button size="sm" variant="outline" className="h-8 shrink-0 gap-1 hover:border-success/60 hover:text-success" onClick={() => completeHabit(h)}>
+                <CheckCircle2 className="h-3.5 w-3.5" /> Log
+              </Button>
+            </div>
+          ))}
+          {focus.goals.map((g: any) => (
+            <div key={g.id} className="item-in flex items-center justify-between gap-2 rounded-lg border border-border bg-background/40 px-3 py-2">
+              <span className="min-w-0 truncate text-sm">{g.title}</span>
+              <Button size="sm" variant="outline" className="h-8 shrink-0 gap-1 hover:border-success/60 hover:text-success" onClick={() => completeGoal(g)}>
+                <CheckCircle2 className="h-3.5 w-3.5" /> Done
+              </Button>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
