@@ -2,6 +2,16 @@
 
 Chronological record of everything built so far. Newest first.
 
+## UI/UX upgrade (visual & interaction pass)
+
+- **Color & states**: per-category accent colors drive icon tint, hover border glow, and gradient progress bars on Dashboard, Categories, and category pages; brighter small labels; soft glow on primary buttons.
+- **Habit cards**: outlined "Log today" → green filled "✓ Done" with Undo; today cell gets an orange ring + "Today" mark; missed days show dashed red styling; checked days use a green heatmap; streak flame glows at 3+ days; milestone badges at 7/14/30 days; one shared 7D/14D/30D switch at the top of the Habits page; "Daily habits" / "One-time tasks" section labels on category pages.
+- **Micro-interactions**: hover lift on cards, progress bars animate on load, dashboard numbers count up, spark burst + card pulse + streak toast on check-in, item fade/slide-in, skeleton loaders, full prefers-reduced-motion support.
+- **Dashboard**: new "Today's focus" card listing today's unfinished habits and Daily Goals with one-tap complete buttons.
+- **AI Coach**: summary rendered as formatted headings/bullets; top-3 recommendations with priority badges, "Add as task" and "Dismiss"; remaining recs behind "Show more"; reasoning trace collapsed by default.
+- **Activity**: grouped by Today / Yesterday / Earlier, filter chips (All/Created/Completed/Deleted), newest 20 with "Load more".
+- **Details**: Ctrl+K / Cmd+K command palette (search categories & tasks, quick actions); form placeholders, inline validation, clearer disabled Save; aligned progress bars on category cards; mobile bottom navigation bar, horizontally scrolling day cells, smaller mascot on phones.
+
 ## Recurring tasks engine
 - "Repeats daily" toggle on tasks in any category (off by default; Habits always recurring).
 - Shared `habit_logs` check-in engine now powers streaks and tick grids for all
