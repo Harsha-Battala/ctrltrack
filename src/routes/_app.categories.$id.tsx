@@ -175,7 +175,7 @@ function CategoryDetail() {
         is_recurring: isHabits || !!draft.recurring,
       }).eq("id", draft.id);
       if (error) return toast.error(error.message);
-      await logActivity({ userId: user.id, action: "updated", entityType: "item", entityId: draft.id, entityTitle: draft.title, categoryId: category.id, categoryName: category.name });
+      void logActivity({ userId: user.id, action: "updated", entityType: "item", entityId: draft.id, entityTitle: draft.title, categoryId: category.id, categoryName: category.name });
       toast.success("Item updated");
     } else {
       const { data, error } = await supabase.from("items").insert({
@@ -183,7 +183,7 @@ function CategoryDetail() {
         is_recurring: isHabits || !!draft.recurring,
       }).select().single();
       if (error) return toast.error(error.message);
-      await logActivity({ userId: user.id, action: "created", entityType: "item", entityId: data.id, entityTitle: draft.title, categoryId: category.id, categoryName: category.name });
+      void logActivity({ userId: user.id, action: "created", entityType: "item", entityId: data.id, entityTitle: draft.title, categoryId: category.id, categoryName: category.name });
       toast.success(isHabits ? "Habit added" : "Item added");
     }
     invalidateAll();
@@ -240,40 +240,82 @@ function CategoryDetail() {
 
   async function toggleHabitDay(itemId: string, dateKey: string) {
     if (!user) return;
+    const key = `habit:${itemId}:${dateKey}`;
+    if (pendingActions.current.has(key)) return;
+    pendingActions.current.add(key);
     const already = logsByItem.get(itemId)?.has(dateKey);
+    // Optimistic: reflect the check-in immediately, roll back only if the write fails.
+    qc.setQueryData<(typeof habitLogs)>(["habit-logs", id, recurringIds], (old) => {
+      const rows = old ?? [];
+      return already
+        ? rows.filter((l: any) => !(l.item_id === itemId && l.log_date === dateKey))
+        : [...rows, { item_id: itemId, log_date: dateKey, user_id: user.id }];
+    });
     if (already) {
       const { error } = await supabase.from("habit_logs").delete()
         .eq("item_id", itemId).eq("log_date", dateKey);
-      if (error) return toast.error(error.message);
+      if (error) {
+        qc.invalidateQueries({ queryKey: ["habit-logs", id] });
+        toast.error(error.message);
+        pendingActions.current.delete(key);
+        return;
+      }
     } else {
       const { error } = await supabase.from("habit_logs").insert({
         user_id: user.id, item_id: itemId, log_date: dateKey,
       });
-      if (error) return toast.error(error.message);
+      if (error) {
+        qc.invalidateQueries({ queryKey: ["habit-logs", id] });
+        toast.error(error.message);
+        pendingActions.current.delete(key);
+        return;
+      }
       const it = items.find((i: any) => i.id === itemId);
-      await logActivity({ userId: user.id, action: "completed", entityType: "item", entityId: itemId, entityTitle: it?.title, categoryId: category?.id, categoryName: category?.name });
+      void logActivity({ userId: user.id, action: "completed", entityType: "item", entityId: itemId, entityTitle: it?.title, categoryId: category?.id, categoryName: category?.name });
     }
     qc.invalidateQueries({ queryKey: ["habit-logs", id] });
     qc.invalidateQueries({ queryKey: ["stats"] });
+    pendingActions.current.delete(key);
   }
 
   async function toggle(item: any) {
     if (!user || !category) return;
+    const key = `toggle:${item.id}`;
+    if (pendingActions.current.has(key)) return;
+    pendingActions.current.add(key);
     const next = !item.completed;
+    // Optimistic: flip the checkbox instantly, refetch to reconcile.
+    qc.setQueryData<any[]>(["items", id], (old) =>
+      (old ?? []).map((i: any) =>
+        i.id === item.id ? { ...i, completed: next, completed_at: next ? new Date().toISOString() : null } : i,
+      ),
+    );
     const { error } = await supabase.from("items").update({
       completed: next, completed_at: next ? new Date().toISOString() : null,
     }).eq("id", item.id);
-    if (error) return toast.error(error.message);
-    await logActivity({ userId: user.id, action: next ? "completed" : "uncompleted", entityType: "item", entityId: item.id, entityTitle: item.title, categoryId: category.id, categoryName: category.name });
-    invalidateAll();
+    if (error) {
+      qc.invalidateQueries({ queryKey: ["items", id] });
+      toast.error(error.message);
+    } else {
+      void logActivity({ userId: user.id, action: next ? "completed" : "uncompleted", entityType: "item", entityId: item.id, entityTitle: item.title, categoryId: category.id, categoryName: category.name });
+      invalidateAll();
+    }
+    pendingActions.current.delete(key);
   }
 
   async function remove(itemId: string) {
     if (!user || !category) return;
     const it = items.find((i: any) => i.id === itemId);
+    const snapshot = qc.getQueryData(["items", id]);
+    // Optimistic: drop the row immediately, restore on failure.
+    qc.setQueryData<any[]>(["items", id], (old) => (old ?? []).filter((i: any) => i.id !== itemId));
     const { error } = await supabase.from("items").delete().eq("id", itemId);
-    if (error) return toast.error(error.message);
-    await logActivity({ userId: user.id, action: "deleted", entityType: "item", entityId: itemId, entityTitle: it?.title, categoryId: category.id, categoryName: category.name });
+    if (error) {
+      qc.setQueryData(["items", id], snapshot);
+      toast.error(error.message);
+      return;
+    }
+    void logActivity({ userId: user.id, action: "deleted", entityType: "item", entityId: itemId, entityTitle: it?.title, categoryId: category.id, categoryName: category.name });
     toast.success(isHabits ? "Habit deleted" : "Item deleted");
     invalidateAll();
   }
