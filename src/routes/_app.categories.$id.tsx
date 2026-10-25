@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ArrowLeft, Plus, Search, MoreVertical, Edit2, Trash2, Filter, FileCheck2, Building2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -66,6 +66,8 @@ function CategoryDetail() {
   const [editing, setEditing] = useState<ItemDraft | null>(null);
   const [editingJob, setEditingJob] = useState<JobItemDraft | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  // Guards against double-firing the same write when a click lands while one is in flight.
+  const pendingActions = useRef(new Set<string>());
 
   const { data: category } = useQuery({
     queryKey: ["category", id],
