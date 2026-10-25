@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, CheckCircle2, Clock, Layers, Plus, Sparkles, Zap, TrendingUp, Sun } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -298,6 +298,8 @@ function Dashboard() {
 function TodaysFocus({ userId }: { userId?: string }) {
   const qc = useQueryClient();
   const todayKey = format(new Date(), "yyyy-MM-dd");
+  // Guards against double-firing while a check-in is in flight.
+  const pending = useRef(new Set<string>());
 
   const { data: focus } = useQuery({
     queryKey: ["today-focus", userId, todayKey],
@@ -330,22 +332,48 @@ function TodaysFocus({ userId }: { userId?: string }) {
   if (!focus || (!focus.habits.length && !focus.goals.length)) return null;
 
   async function completeHabit(item: any) {
-    const { error } = await supabase.from("habit_logs").insert({ user_id: userId!, item_id: item.id, log_date: todayKey });
-    if (error) return toast.error(error.message);
-    await logActivity({ userId: userId!, action: "completed", entityType: "item", entityId: item.id, entityTitle: item.title, categoryId: (focus as any).habitsCatId, categoryName: "Habits" });
+    if (!userId || pending.current.has(item.id)) return;
+    pending.current.add(item.id);
+    // Optimistic: remove it from the list instantly; restore if the write fails.
+    qc.setQueryData<any>(["today-focus", userId, todayKey], (old) => old && ({
+      ...old,
+      habits: old.habits.filter((h: any) => h.id !== item.id),
+    }));
+    const { error } = await supabase.from("habit_logs").insert({ user_id: userId, item_id: item.id, log_date: todayKey });
+    if (error) {
+      qc.invalidateQueries({ queryKey: ["today-focus"] });
+      toast.error(error.message);
+      pending.current.delete(item.id);
+      return;
+    }
+    void logActivity({ userId, action: "completed", entityType: "item", entityId: item.id, entityTitle: item.title, categoryId: (focus as any).habitsCatId, categoryName: "Habits" });
     toast.success(`Nice! "${item.title}" logged`);
     qc.invalidateQueries({ queryKey: ["today-focus"] });
     qc.invalidateQueries({ queryKey: ["habit-logs"] });
     qc.invalidateQueries({ queryKey: ["stats"] });
+    pending.current.delete(item.id);
   }
 
   async function completeGoal(item: any) {
+    if (!userId || pending.current.has(item.id)) return;
+    pending.current.add(item.id);
+    // Optimistic: remove it from the list instantly; restore if the write fails.
+    qc.setQueryData<any>(["today-focus", userId, todayKey], (old) => old && ({
+      ...old,
+      goals: old.goals.filter((g: any) => g.id !== item.id),
+    }));
     const { error } = await supabase.from("items").update({ completed: true, completed_at: new Date().toISOString() }).eq("id", item.id);
-    if (error) return toast.error(error.message);
-    await logActivity({ userId: userId!, action: "completed", entityType: "item", entityId: item.id, entityTitle: item.title, categoryId: (focus as any).goalsCatId, categoryName: "Daily Goals" });
+    if (error) {
+      qc.invalidateQueries({ queryKey: ["today-focus"] });
+      toast.error(error.message);
+      pending.current.delete(item.id);
+      return;
+    }
+    void logActivity({ userId, action: "completed", entityType: "item", entityId: item.id, entityTitle: item.title, categoryId: (focus as any).goalsCatId, categoryName: "Daily Goals" });
     toast.success(`Done: "${item.title}"`);
     qc.invalidateQueries({ queryKey: ["today-focus"] });
     qc.invalidateQueries({ queryKey: ["stats"] });
+    pending.current.delete(item.id);
   }
 
   return (

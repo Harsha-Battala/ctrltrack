@@ -11,7 +11,7 @@ export async function logActivity(opts: {
   categoryId?: string;
   categoryName?: string;
 }) {
-  await supabase.from("activities").insert({
+  const { error } = await supabase.from("activities").insert({
     user_id: opts.userId,
     action: opts.action,
     entity_type: opts.entityType,
@@ -20,4 +20,5 @@ export async function logActivity(opts: {
     category_id: opts.categoryId,
     category_name: opts.categoryName,
   });
+  if (error) console.error("Activity log failed:", error.message);
 }
