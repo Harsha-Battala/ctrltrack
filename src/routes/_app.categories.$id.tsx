@@ -207,8 +207,8 @@ function CategoryDetail() {
         completed: draft.status === "offer",
         completed_at: draft.status === "offer" ? new Date().toISOString() : null,
       }).eq("id", draft.id);
-      if (error) return toast.error(error.message);
-      await logActivity({ userId: user.id, action: "updated", entityType: "item", entityId: draft.id, entityTitle: computedTitle, categoryId: category.id, categoryName: category.name });
+    if (error) return toast.error(error.message);
+      void logActivity({ userId: user.id, action: "updated", entityType: "item", entityId: draft.id, entityTitle: computedTitle, categoryId: category.id, categoryName: category.name });
       toast.success("Application updated");
     } else {
       const { data, error } = await supabase.from("items").insert({
@@ -217,7 +217,7 @@ function CategoryDetail() {
         job_resume_sent: draft.resumeSent, job_applied_date: draft.appliedDate || null,
       }).select().single();
       if (error) return toast.error(error.message);
-      await logActivity({ userId: user.id, action: "created", entityType: "item", entityId: data.id, entityTitle: computedTitle, categoryId: category.id, categoryName: category.name });
+      void logActivity({ userId: user.id, action: "created", entityType: "item", entityId: data.id, entityTitle: computedTitle, categoryId: category.id, categoryName: category.name });
       toast.success("Application added");
     }
     invalidateAll();
@@ -231,7 +231,7 @@ function CategoryDetail() {
       completed_at: status === "offer" ? new Date().toISOString() : null,
     }).eq("id", item.id);
     if (error) return toast.error(error.message);
-    await logActivity({ userId: user.id, action: "updated", entityType: "item", entityId: item.id, entityTitle: item.title, categoryId: category.id, categoryName: category.name });
+    void logActivity({ userId: user.id, action: "updated", entityType: "item", entityId: item.id, entityTitle: item.title, categoryId: category.id, categoryName: category.name });
     toast.success(`Moved to ${JOB_STATUS_LABELS[status]}`);
     invalidateAll();
   }
