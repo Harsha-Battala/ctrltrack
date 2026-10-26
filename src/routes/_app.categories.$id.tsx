@@ -245,7 +245,7 @@ function CategoryDetail() {
     pendingActions.current.add(key);
     const already = logsByItem.get(itemId)?.has(dateKey);
     // Optimistic: reflect the check-in immediately, roll back only if the write fails.
-    qc.setQueryData<(typeof habitLogs)>(["habit-logs", id, recurringIds], (old) => {
+    qc.setQueryData<any[]>(["habit-logs", id, recurringIds], (old) => {
       const rows = old ?? [];
       return already
         ? rows.filter((l: any) => !(l.item_id === itemId && l.log_date === dateKey))
