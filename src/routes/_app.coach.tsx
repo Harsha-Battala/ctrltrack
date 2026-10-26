@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle, BookOpen, Briefcase, Calendar, Flame, ListChecks,
   Repeat, Sparkles, Target, TrendingUp, Award, CheckCircle2, Zap,
@@ -263,6 +263,7 @@ function AgentResultView({ result, userId }: { result: AgentRunResult; userId: s
   const [showAll, setShowAll] = useState(false);
   const [showTrace, setShowTrace] = useState(false);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const qc = useQueryClient();
 
   const rank = { high: 0, medium: 1, low: 2 } as const;
   const recs = [...result.recommendations]
@@ -280,6 +281,8 @@ function AgentResultView({ result, userId }: { result: AgentRunResult; userId: s
     });
     if (error) return toast.error(error.message);
     toast.success(`Added to ${target.name}`);
+    qc.invalidateQueries({ queryKey: ["stats"] });
+    qc.invalidateQueries({ queryKey: ["coach", userId] });
     setDismissed((s) => new Set(s).add(r.id));
   }
 

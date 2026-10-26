@@ -335,7 +335,7 @@ function TodaysFocus({ userId }: { userId?: string }) {
     if (!userId || pending.current.has(item.id)) return;
     pending.current.add(item.id);
     // Optimistic: remove it from the list instantly; restore if the write fails.
-    qc.setQueryData<any>(["today-focus", userId, todayKey], (old) => old && ({
+    qc.setQueryData<any>(["today-focus", userId, todayKey], (old: any) => old && ({
       ...old,
       habits: old.habits.filter((h: any) => h.id !== item.id),
     }));
@@ -358,7 +358,7 @@ function TodaysFocus({ userId }: { userId?: string }) {
     if (!userId || pending.current.has(item.id)) return;
     pending.current.add(item.id);
     // Optimistic: remove it from the list instantly; restore if the write fails.
-    qc.setQueryData<any>(["today-focus", userId, todayKey], (old) => old && ({
+    qc.setQueryData<any>(["today-focus", userId, todayKey], (old: any) => old && ({
       ...old,
       goals: old.goals.filter((g: any) => g.id !== item.id),
     }));
