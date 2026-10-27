@@ -1,4 +1,4 @@
-import { differenceInCalendarDays, isToday, isThisWeek, subDays } from "date-fns";
+import { differenceInCalendarDays, format, isToday, isThisWeek, subDays } from "date-fns";
 
 export type ItemRow = {
   id: string;
@@ -72,15 +72,23 @@ export function computeCoachStats(
   items: ItemRow[],
   cats: CategoryRow[],
   activities: ActivityRow[],
+  habitLogs: Array<{ log_date: string }> = [],
 ): CoachStats {
   const now = new Date();
   const weekAgo = subDays(now, 7);
 
+  // Daily check-ins count as completions too — recurring items never flip `completed`,
+  // so habit logs are the only record that a recurring task got done.
+  const todayKey = format(now, "yyyy-MM-dd");
+  const weekKey = format(weekAgo, "yyyy-MM-dd");
+  const todayLogs = habitLogs.filter((l) => l.log_date === todayKey).length;
+  const weekLogs = habitLogs.filter((l) => l.log_date >= weekKey).length;
+
   const todayItems = items.filter((i) => isToday(new Date(i.updated_at)));
-  const todayCompleted = todayItems.filter((i) => i.completed).length;
+  const todayCompleted = todayItems.filter((i) => i.completed).length + todayLogs;
   const weekCompleted = items.filter(
     (i) => i.completed && i.completed_at && new Date(i.completed_at) >= weekAgo,
-  ).length;
+  ).length + weekLogs;
   const weekCreated = items.filter((i) => new Date(i.created_at) >= weekAgo).length;
 
   const total = items.length;

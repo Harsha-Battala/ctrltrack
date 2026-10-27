@@ -176,17 +176,17 @@ export function AiPet() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-4 right-4 z-50 flex h-[540px] w-[min(94vw,390px)] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl shadow-black/50 sm:bottom-6 sm:right-24">
+        <div className="fixed bottom-4 right-4 z-50 flex h-[min(540px,calc(100dvh-2.5rem))] w-[min(94vw,390px)] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl shadow-black/50 sm:bottom-6 sm:right-24">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <div>
               <p className="font-display text-sm font-semibold">Ctrl · AI Companion</p>
               <p className="text-[11px] text-muted-foreground">Always here to help you move forward</p>
             </div>
             <div className="flex items-center gap-1">
-              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setOpen(false)}>
+              <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Minimize chat" onClick={() => setOpen(false)}>
                 <Minus className="h-4 w-4" />
               </Button>
-              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setOpen(false)}>
+              <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Close chat" onClick={() => setOpen(false)}>
                 <X className="h-4 w-4" />
               </Button>
             </div>

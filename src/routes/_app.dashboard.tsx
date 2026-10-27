@@ -11,7 +11,7 @@ import { getIcon } from "@/lib/icons";
 import { ensureStarterCategories } from "@/lib/starter-categories";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow, format, subDays } from "date-fns";
 import { computeCoachStats } from "@/lib/coach";
 import { useCountUp } from "@/lib/use-count-up";
 import { logActivity } from "@/lib/activity";
@@ -66,15 +66,17 @@ function Dashboard() {
     queryKey: ["stats", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const [items, cats, acts] = await Promise.all([
+      const [items, cats, acts, hlogs] = await Promise.all([
         supabase.from("items").select("*").eq("user_id", user!.id),
         supabase.from("categories").select("*").eq("user_id", user!.id),
         supabase.from("activities").select("*").eq("user_id", user!.id)
           .order("created_at", { ascending: false }).limit(100),
+        supabase.from("habit_logs").select("log_date")
+          .gte("log_date", format(subDays(new Date(), 7), "yyyy-MM-dd")),
       ]);
       const total = items.data?.length ?? 0;
       const completed = items.data?.filter((i) => i.completed).length ?? 0;
-      const coach = computeCoachStats(items.data ?? [], cats.data ?? [], acts.data ?? []);
+      const coach = computeCoachStats(items.data ?? [], cats.data ?? [], acts.data ?? [], hlogs.data ?? []);
       return {
         total,
         completed,
@@ -329,6 +331,16 @@ function TodaysFocus({ userId }: { userId?: string }) {
     },
   });
 
+  // Keys shared across pages: refreshing only today-focus left other caches stale.
+  function invalidateShared() {
+    qc.invalidateQueries({ queryKey: ["stats"] });
+    qc.invalidateQueries({ queryKey: ["items"] });
+    qc.invalidateQueries({ queryKey: ["categories"] });
+    qc.invalidateQueries({ queryKey: ["categories-full"] });
+    qc.invalidateQueries({ queryKey: ["activities"] });
+  }
+
+
   if (!focus || (!focus.habits.length && !focus.goals.length)) return null;
 
   async function completeHabit(item: any) {
@@ -350,7 +362,7 @@ function TodaysFocus({ userId }: { userId?: string }) {
     toast.success(`Nice! "${item.title}" logged`);
     qc.invalidateQueries({ queryKey: ["today-focus"] });
     qc.invalidateQueries({ queryKey: ["habit-logs"] });
-    qc.invalidateQueries({ queryKey: ["stats"] });
+    invalidateShared();
     pending.current.delete(item.id);
   }
 
@@ -362,7 +374,10 @@ function TodaysFocus({ userId }: { userId?: string }) {
       ...old,
       goals: old.goals.filter((g: any) => g.id !== item.id),
     }));
-    const { error } = await supabase.from("items").update({ completed: true, completed_at: new Date().toISOString() }).eq("id", item.id);
+    // Recurring goals use the shared daily-log engine, not a permanent `completed` flip.
+    const { error } = item.is_recurring
+      ? await supabase.from("habit_logs").insert({ user_id: userId, item_id: item.id, log_date: todayKey })
+      : await supabase.from("items").update({ completed: true, completed_at: new Date().toISOString() }).eq("id", item.id);
     if (error) {
       qc.invalidateQueries({ queryKey: ["today-focus"] });
       toast.error(error.message);
@@ -372,7 +387,8 @@ function TodaysFocus({ userId }: { userId?: string }) {
     void logActivity({ userId, action: "completed", entityType: "item", entityId: item.id, entityTitle: item.title, categoryId: (focus as any).goalsCatId, categoryName: "Daily Goals" });
     toast.success(`Done: "${item.title}"`);
     qc.invalidateQueries({ queryKey: ["today-focus"] });
-    qc.invalidateQueries({ queryKey: ["stats"] });
+    qc.invalidateQueries({ queryKey: ["habit-logs"] });
+    invalidateShared();
     pending.current.delete(item.id);
   }
 
