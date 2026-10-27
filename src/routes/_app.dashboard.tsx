@@ -362,7 +362,7 @@ function TodaysFocus({ userId }: { userId?: string }) {
     toast.success(`Nice! "${item.title}" logged`);
     qc.invalidateQueries({ queryKey: ["today-focus"] });
     qc.invalidateQueries({ queryKey: ["habit-logs"] });
-    qc.invalidateQueries({ queryKey: ["stats"] });
+    invalidateShared();
     pending.current.delete(item.id);
   }
 
@@ -374,7 +374,10 @@ function TodaysFocus({ userId }: { userId?: string }) {
       ...old,
       goals: old.goals.filter((g: any) => g.id !== item.id),
     }));
-    const { error } = await supabase.from("items").update({ completed: true, completed_at: new Date().toISOString() }).eq("id", item.id);
+    // Recurring goals use the shared daily-log engine, not a permanent `completed` flip.
+    const { error } = item.is_recurring
+      ? await supabase.from("habit_logs").insert({ user_id: userId, item_id: item.id, log_date: todayKey })
+      : await supabase.from("items").update({ completed: true, completed_at: new Date().toISOString() }).eq("id", item.id);
     if (error) {
       qc.invalidateQueries({ queryKey: ["today-focus"] });
       toast.error(error.message);
@@ -384,7 +387,8 @@ function TodaysFocus({ userId }: { userId?: string }) {
     void logActivity({ userId, action: "completed", entityType: "item", entityId: item.id, entityTitle: item.title, categoryId: (focus as any).goalsCatId, categoryName: "Daily Goals" });
     toast.success(`Done: "${item.title}"`);
     qc.invalidateQueries({ queryKey: ["today-focus"] });
-    qc.invalidateQueries({ queryKey: ["stats"] });
+    qc.invalidateQueries({ queryKey: ["habit-logs"] });
+    invalidateShared();
     pending.current.delete(item.id);
   }
 

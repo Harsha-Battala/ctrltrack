@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/auth-context";
 import { computeCoachStats, generateInsights, type Insight } from "@/lib/coach";
 import { getIcon } from "@/lib/icons";
 import { useState } from "react";
+import { format, subDays } from "date-fns";
 import { runAiCoach, type AgentRunResult, type AgentRecommendation } from "@/lib/ai-coach-client";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronRight, Plus, X } from "lucide-react";
@@ -41,13 +42,15 @@ function CoachPage() {
     queryKey: ["coach", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const [items, cats, acts] = await Promise.all([
+      const [items, cats, acts, hlogs] = await Promise.all([
         supabase.from("items").select("*").eq("user_id", user!.id),
         supabase.from("categories").select("*").eq("user_id", user!.id),
         supabase.from("activities").select("*").eq("user_id", user!.id)
           .order("created_at", { ascending: false }).limit(200),
+        supabase.from("habit_logs").select("log_date")
+          .gte("log_date", format(subDays(new Date(), 7), "yyyy-MM-dd")),
       ]);
-      const stats = computeCoachStats(items.data ?? [], cats.data ?? [], acts.data ?? []);
+      const stats = computeCoachStats(items.data ?? [], cats.data ?? [], acts.data ?? [], hlogs.data ?? []);
       const insights = generateInsights(items.data ?? [], cats.data ?? [], acts.data ?? [], stats);
       return { stats, insights, hasData: (items.data?.length ?? 0) > 0 || (cats.data?.length ?? 0) > 0 };
     },
