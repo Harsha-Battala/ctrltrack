@@ -331,6 +331,16 @@ function TodaysFocus({ userId }: { userId?: string }) {
     },
   });
 
+  // Keys shared across pages: refreshing only today-focus left other caches stale.
+  function invalidateShared() {
+    qc.invalidateQueries({ queryKey: ["stats"] });
+    qc.invalidateQueries({ queryKey: ["items"] });
+    qc.invalidateQueries({ queryKey: ["categories"] });
+    qc.invalidateQueries({ queryKey: ["categories-full"] });
+    qc.invalidateQueries({ queryKey: ["activities"] });
+  }
+
+
   if (!focus || (!focus.habits.length && !focus.goals.length)) return null;
 
   async function completeHabit(item: any) {
