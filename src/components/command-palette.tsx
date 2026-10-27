@@ -32,7 +32,7 @@ export function CommandPalette() {
     queryFn: async () => {
       const [cats, items] = await Promise.all([
         supabase.from("categories").select("id,name,icon,color").eq("user_id", user!.id),
-        supabase.from("items").select("id,title,category_id").eq("user_id", user!.id).limit(100),
+        supabase.from("items").select("id,title,category_id").eq("user_id", user!.id).order("created_at", { ascending: false }).limit(200),
       ]);
       return { cats: cats.data ?? [], items: items.data ?? [] };
     },

@@ -128,6 +128,13 @@ function CategoryDetail() {
     return map;
   }, [habitLogs]);
 
+  // Recurring items count as done on days they have a check-in, not when item.completed flips.
+  const loggedToday = useMemo(() => {
+    const key = format(new Date(), "yyyy-MM-dd");
+    return new Set((habitLogs as any[]).filter((l) => l.log_date === key).map((l) => l.item_id));
+  }, [habitLogs]);
+  const isDone = (i: any) => (isRecurringItem(i) ? loggedToday.has(i.id) : i.completed);
+
   const filtered = useMemo(() => {
     let r = visibleItems;
     if (search) {
@@ -138,8 +145,8 @@ function CategoryDetail() {
       );
     }
     if (!isJobs && !isHabits) {
-      if (filter === "pending") r = r.filter((i) => !i.completed);
-      if (filter === "completed") r = r.filter((i) => i.completed);
+      if (filter === "pending") r = r.filter((i) => !isDone(i));
+      if (filter === "completed") r = r.filter((i) => isDone(i));
     }
     r = [...r].sort((a, b) => {
       switch (sort) {
@@ -150,12 +157,12 @@ function CategoryDetail() {
       }
     });
     return r;
-  }, [visibleItems, search, filter, sort, isJobs, isHabits]);
+  }, [visibleItems, search, filter, sort, isJobs, isHabits, loggedToday]);
 
   const filteredRecurring = filtered.filter((i: any) => !isJobs && isRecurringItem(i));
   const filteredOnce = filtered.filter((i: any) => isJobs || !isRecurringItem(i));
   const total = visibleItems.length;
-  const done = visibleItems.filter((i: any) => i.completed).length;
+  const done = visibleItems.filter((i: any) => (isHabits ? i.completed : isDone(i))).length;
   const pct = total ? Math.round((done / total) * 100) : 0;
 
   function invalidateAll() {
@@ -163,6 +170,9 @@ function CategoryDetail() {
     qc.invalidateQueries({ queryKey: ["stats"] });
     qc.invalidateQueries({ queryKey: ["categories-full"] });
     qc.invalidateQueries({ queryKey: ["categories"] });
+    qc.invalidateQueries({ queryKey: ["today-focus"] });
+    qc.invalidateQueries({ queryKey: ["activities"] });
+    qc.invalidateQueries({ queryKey: ["pet-context"] });
   }
 
   // ---------- generic item save/toggle/remove (non-job, non-habit categories, and habit creation) ----------
@@ -215,6 +225,7 @@ function CategoryDetail() {
         user_id: user.id, category_id: id, title: computedTitle, description: draft.description, priority: draft.priority,
         job_company: draft.company, job_role: draft.role, job_status: draft.status,
         job_resume_sent: draft.resumeSent, job_applied_date: draft.appliedDate || null,
+        completed: draft.status === "offer", completed_at: draft.status === "offer" ? new Date().toISOString() : null,
       }).select().single();
       if (error) return toast.error(error.message);
       void logActivity({ userId: user.id, action: "created", entityType: "item", entityId: data.id, entityTitle: computedTitle, categoryId: category.id, categoryName: category.name });
@@ -275,6 +286,8 @@ function CategoryDetail() {
     }
     qc.invalidateQueries({ queryKey: ["habit-logs", id] });
     qc.invalidateQueries({ queryKey: ["stats"] });
+    qc.invalidateQueries({ queryKey: ["today-focus"] });
+    qc.invalidateQueries({ queryKey: ["activities"] });
     pendingActions.current.delete(key);
   }
 
@@ -351,7 +364,7 @@ function CategoryDetail() {
       }
       sum += Math.round((count / 30) * 100);
       if (logged.has(todayKey)) doneToday++;
-      bestStreak = Math.max(bestStreak, computeBestStreak(logged));
+      bestStreak = Math.max(bestStreak, computeBestStreak(logged, 3650));
     });
     return {
       avgCompletion: Math.round(sum / items.length),
