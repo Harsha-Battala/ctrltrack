@@ -11,7 +11,7 @@ import { getIcon } from "@/lib/icons";
 import { ensureStarterCategories } from "@/lib/starter-categories";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow, format, subDays } from "date-fns";
 import { computeCoachStats } from "@/lib/coach";
 import { useCountUp } from "@/lib/use-count-up";
 import { logActivity } from "@/lib/activity";
@@ -66,15 +66,17 @@ function Dashboard() {
     queryKey: ["stats", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const [items, cats, acts] = await Promise.all([
+      const [items, cats, acts, hlogs] = await Promise.all([
         supabase.from("items").select("*").eq("user_id", user!.id),
         supabase.from("categories").select("*").eq("user_id", user!.id),
         supabase.from("activities").select("*").eq("user_id", user!.id)
           .order("created_at", { ascending: false }).limit(100),
+        supabase.from("habit_logs").select("log_date")
+          .gte("log_date", format(subDays(new Date(), 7), "yyyy-MM-dd")),
       ]);
       const total = items.data?.length ?? 0;
       const completed = items.data?.filter((i) => i.completed).length ?? 0;
-      const coach = computeCoachStats(items.data ?? [], cats.data ?? [], acts.data ?? []);
+      const coach = computeCoachStats(items.data ?? [], cats.data ?? [], acts.data ?? [], hlogs.data ?? []);
       return {
         total,
         completed,
