@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
-import { ArrowLeft, Plus, Search, MoreVertical, Edit2, Trash2, Filter, FileCheck2, Building2 } from "lucide-react";
+import { ArrowLeft, Plus, Search, MoreVertical, Edit2, Trash2, Filter, FileCheck2, Building2, Paperclip } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -199,6 +199,49 @@ function CategoryDetail() {
     invalidateAll();
   }
 
+  // ---------- job document attachment (single file, private to the user) ----------
+
+  async function syncJobDocument(itemId: string, draft: JobItemDraft) {
+    const oldPath = draft.documentPath ?? null;
+    if (draft.documentRemove && oldPath) {
+      void supabase.storage.from("job-documents").remove([oldPath]);
+    }
+    if (draft.documentFile) {
+      const safe = draft.documentFile.name.replace(/[^\w.\-() ]+/g, "_").trim() || "document";
+      const path = `${user!.id}/${itemId}/${Date.now()}_${safe}`;
+      const { error: upErr } = await supabase.storage.from("job-documents").upload(path, draft.documentFile, {
+        ...(draft.documentFile.type ? { contentType: draft.documentFile.type } : {}),
+      });
+      if (upErr) {
+        toast.error(`Couldn't attach the file: ${upErr.message}`);
+        return;
+      }
+      if (oldPath && oldPath !== path) void supabase.storage.from("job-documents").remove([oldPath]);
+      const { error: docErr } = await supabase.from("items").update({
+        job_document_path: path,
+        job_document_name: draft.documentFile.name,
+        job_document_type: draft.documentFile.type || null,
+      }).eq("id", itemId);
+      if (docErr) toast.error(docErr.message);
+    } else if (draft.documentRemove) {
+      const { error: docErr } = await supabase.from("items").update({
+        job_document_path: null, job_document_name: null, job_document_type: null,
+      }).eq("id", itemId);
+      if (docErr) toast.error(docErr.message);
+    }
+  }
+
+  async function openJobDocument(item: any) {
+    const path = item.job_document_path as string;
+    if (!path) return;
+    const { data, error } = await supabase.storage.from("job-documents").createSignedUrl(path, 600);
+    if (error || !data) {
+      toast.error("Couldn't open the document. Please try again.");
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener");
+  }
+
   // ---------- job item save (Jobs Applied category) ----------
 
   async function saveJobItem(draft: JobItemDraft) {
@@ -220,6 +263,7 @@ function CategoryDetail() {
     if (error) return toast.error(error.message);
       void logActivity({ userId: user.id, action: "updated", entityType: "item", entityId: draft.id, entityTitle: computedTitle, categoryId: category.id, categoryName: category.name });
       toast.success("Application updated");
+      await syncJobDocument(draft.id, draft);
     } else {
       const { data, error } = await supabase.from("items").insert({
         user_id: user.id, category_id: id, title: computedTitle, description: draft.description, priority: draft.priority,
@@ -230,6 +274,7 @@ function CategoryDetail() {
       if (error) return toast.error(error.message);
       void logActivity({ userId: user.id, action: "created", entityType: "item", entityId: data.id, entityTitle: computedTitle, categoryId: category.id, categoryName: category.name });
       toast.success("Application added");
+      await syncJobDocument(data.id, draft);
     }
     invalidateAll();
   }
@@ -329,6 +374,9 @@ function CategoryDetail() {
       return;
     }
     void logActivity({ userId: user.id, action: "deleted", entityType: "item", entityId: itemId, entityTitle: it?.title, categoryId: category.id, categoryName: category.name });
+    if (it?.job_document_path) {
+      void supabase.storage.from("job-documents").remove([it.job_document_path]);
+    }
     toast.success(isHabits ? "Habit deleted" : "Item deleted");
     invalidateAll();
   }
@@ -522,6 +570,17 @@ function CategoryDetail() {
                         <FileCheck2 className="h-3 w-3" /> Resume sent
                       </Badge>
                     )}
+                    {it.job_document_path && (
+                      <button
+                        type="button"
+                        onClick={() => openJobDocument(it)}
+                        title={`Open ${it.job_document_name ?? "document"}`}
+                        className="inline-flex max-w-[200px] items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-xs text-primary transition hover:bg-primary/20"
+                      >
+                        <Paperclip className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{it.job_document_name ?? "Document"}</span>
+                      </button>
+                    )}
                   </div>
                   {it.description && <p className="mt-1 text-sm text-muted-foreground">{it.description}</p>}
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -545,6 +604,9 @@ function CategoryDetail() {
                       id: it.id, company: it.job_company ?? "", role: it.job_role ?? "",
                       status: (it.job_status ?? "applied") as JobStatus, resumeSent: it.job_resume_sent ?? false,
                       appliedDate: it.job_applied_date ?? "", description: it.description ?? "", priority: it.priority,
+                      documentPath: it.job_document_path ?? undefined,
+                      documentName: it.job_document_name ?? undefined,
+                      documentType: it.job_document_type ?? undefined,
                     })}>
                       <Edit2 className="mr-2 h-4 w-4" /> Edit
                     </DropdownMenuItem>
