@@ -203,6 +203,9 @@ export type Database = {
           is_recurring: boolean
           job_applied_date: string | null
           job_company: string | null
+          job_document_name: string | null
+          job_document_path: string | null
+          job_document_type: string | null
           job_resume_sent: boolean
           job_role: string | null
           job_status: Database["public"]["Enums"]["job_status"] | null
@@ -221,6 +224,9 @@ export type Database = {
           is_recurring?: boolean
           job_applied_date?: string | null
           job_company?: string | null
+          job_document_name?: string | null
+          job_document_path?: string | null
+          job_document_type?: string | null
           job_resume_sent?: boolean
           job_role?: string | null
           job_status?: Database["public"]["Enums"]["job_status"] | null
@@ -239,6 +245,9 @@ export type Database = {
           is_recurring?: boolean
           job_applied_date?: string | null
           job_company?: string | null
+          job_document_name?: string | null
+          job_document_path?: string | null
+          job_document_type?: string | null
           job_resume_sent?: boolean
           job_role?: string | null
           job_status?: Database["public"]["Enums"]["job_status"] | null
