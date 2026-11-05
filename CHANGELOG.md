@@ -2,6 +2,18 @@
 
 Chronological record of everything built so far. Newest first.
 
+## Job application documents
+
+- New **Document** field on every application in Jobs Applied: attach one file —
+  PDF, Word, image, or anything else up to 10 MB — when logging or editing an
+  application; replace or remove it anytime.
+- Attached documents show as a paperclip chip on the application card; clicking
+  it opens the file via a short-lived private link.
+- Files are stored privately (owner-only access) and are deleted automatically
+  when the attachment is removed, replaced, or the application is deleted.
+- All existing application fields (company, role, status, resume-sent, applied
+  date, notes, priority) unchanged.
+
 ## UI/UX upgrade (visual & interaction pass)
 
 - **Color & states**: per-category accent colors drive icon tint, hover border glow, and gradient progress bars on Dashboard, Categories, and category pages; brighter small labels; soft glow on primary buttons.
