@@ -11,3 +11,4 @@
 
 - Recurring tasks: `items.is_recurring` + shared `habit_logs` engine for any category (Habits always recurring). Why: one streak system, no duplicates.
 - Daily Goals: one-time tasks shown only on their creation day (local date), hidden not deleted. Why: fresh daily list without cron.
+- Job application documents: single file per job item in the private `job-documents` storage bucket under `{user_id}/{item_id}/`, owner-only RLS on `storage.objects`; item columns `job_document_path/name/type` reference it, and the file is deleted whenever the attachment is replaced/removed or the item is deleted. Why: private per-user attachments without orphaned files.
