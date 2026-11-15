@@ -88,13 +88,12 @@ export const Route = createFileRoute("/api/pet-chat")({
             role: "user" as const,
             parts: message.parts.map((part) => ({ type: "text" as const, text: part.text })),
           }));
-        const textLength = messages.reduce(
-          (total, message) => total + parsedBody.data.messages
-            .find((candidate) => candidate.id === message.id)!
-            .parts.reduce((partTotal, part) => partTotal + part.text.length, 0),
+        const lastUserInput = parsedBody.data.messages.filter((message) => message.role === "user").at(-1);
+        const textLength = parsedBody.data.messages.reduce(
+          (total, message) => total + message.parts.reduce((partTotal, part) => partTotal + part.text.length, 0),
           0,
         );
-        if (messages.length === 0 || textLength > 20_000) {
+        if (!lastUserInput || messages.length === 0 || textLength > 20_000) {
           return new Response("Invalid chat messages", { status: 400 });
         }
 
@@ -142,7 +141,7 @@ export const Route = createFileRoute("/api/pet-chat")({
 
         // Keep account data out of the caller's request and out of system instructions.
         const latestMessage = messages[messages.length - 1]!;
-        const latestText = latestMessage.parts.map((part) => part.text).join("\n");
+        const latestText = lastUserInput.parts.map((part) => part.text).join("\n");
         const conversation: UIMessage[] = [
           ...messages.slice(0, -1),
           {
