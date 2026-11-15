@@ -62,6 +62,10 @@ export const Route = createFileRoute("/api/pet-chat")({
 
         let rawBody: unknown;
         try {
+          const contentLength = Number(request.headers.get("content-length") ?? 0);
+          if (contentLength > 100_000) {
+            return new Response("Chat request is too large", { status: 413 });
+          }
           const bodyText = await request.text();
           if (bodyText.length > 100_000) {
             return new Response("Chat request is too large", { status: 413 });
