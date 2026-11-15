@@ -76,11 +76,14 @@ export const Route = createFileRoute("/api/pet-chat")({
           return new Response("Invalid chat messages", { status: 400 });
         }
 
-        const messages: UIMessage[] = parsedBody.data.messages.map((message) => ({
+        const messages: UIMessage[] = parsedBody.data.messages
+          .filter((message) => message.role === "user")
+          .slice(-12)
+          .map((message) => ({
           id: message.id,
-          role: message.role,
+          role: "user" as const,
           parts: message.parts.map((part) => ({ type: "text", text: part.text })),
-        }));
+          }));
         const textLength = messages.reduce(
           (total, message) => total + message.parts.reduce(
             (partTotal, part) => partTotal + (part.type === "text" ? part.text.length : 0),
@@ -88,7 +91,7 @@ export const Route = createFileRoute("/api/pet-chat")({
           ),
           0,
         );
-        if (textLength > 20_000 || messages.at(-1)?.role !== "user") {
+        if (messages.length === 0 || textLength > 20_000) {
           return new Response("Invalid chat messages", { status: 400 });
         }
 
