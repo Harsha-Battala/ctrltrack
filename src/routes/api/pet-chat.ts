@@ -66,10 +66,27 @@ export const Route = createFileRoute("/api/pet-chat")({
           if (contentLength > 100_000) {
             return new Response("Chat request is too large", { status: 413 });
           }
-          const bodyText = await request.text();
-          if (bodyText.length > 100_000) {
-            return new Response("Chat request is too large", { status: 413 });
+          if (!request.body) return new Response("Invalid chat request", { status: 400 });
+          const reader = request.body.getReader();
+          const chunks: Uint8Array[] = [];
+          let totalBytes = 0;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            totalBytes += value.byteLength;
+            if (totalBytes > 100_000) {
+              await reader.cancel();
+              return new Response("Chat request is too large", { status: 413 });
+            }
+            chunks.push(value);
           }
+          const bodyBytes = new Uint8Array(totalBytes);
+          let offset = 0;
+          for (const chunk of chunks) {
+            bodyBytes.set(chunk, offset);
+            offset += chunk.byteLength;
+          }
+          const bodyText = new TextDecoder().decode(bodyBytes);
           rawBody = JSON.parse(bodyText);
         } catch {
           return new Response("Invalid chat request", { status: 400 });
