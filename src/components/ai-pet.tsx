@@ -98,11 +98,13 @@ export function AiPet() {
 
   const transport = useMemo(() => new DefaultChatTransport({
     api: "/api/pet-chat",
-    headers: async () => {
+    fetch: async (input, init) => {
       const { data } = await supabase.auth.getSession();
-      return data.session?.access_token
-        ? { Authorization: `Bearer ${data.session.access_token}` }
-        : {};
+      const headers = new Headers(init?.headers);
+      if (data.session?.access_token) {
+        headers.set("Authorization", `Bearer ${data.session.access_token}`);
+      }
+      return fetch(input, { ...init, headers });
     },
   }), []);
   const { messages, sendMessage, status, error } = useChat({ transport });
