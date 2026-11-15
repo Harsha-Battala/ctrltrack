@@ -1,0 +1,4 @@
+- [ ] Review security scan results and app/backend access boundaries.
+- [ ] Harden applicable app request/response protections without changing product behavior.
+- [ ] Verify the app builds and review resulting security diagnostics.
+- [ ] Report firewall coverage and any provider-level limitation clearly.
