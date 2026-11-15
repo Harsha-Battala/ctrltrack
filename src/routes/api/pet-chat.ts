@@ -84,15 +84,14 @@ export const Route = createFileRoute("/api/pet-chat")({
           .filter((message) => message.role === "user")
           .slice(-12)
           .map((message) => ({
-          id: message.id,
-          role: "user" as const,
-          parts: message.parts.map((part) => ({ type: "text", text: part.text })),
+            id: message.id,
+            role: "user" as const,
+            parts: message.parts.map((part) => ({ type: "text" as const, text: part.text })),
           }));
         const textLength = messages.reduce(
-          (total, message) => total + message.parts.reduce(
-            (partTotal, part) => partTotal + (part.type === "text" ? part.text.length : 0),
-            0,
-          ),
+          (total, message) => total + parsedBody.data.messages
+            .find((candidate) => candidate.id === message.id)!
+            .parts.reduce((partTotal, part) => partTotal + part.text.length, 0),
           0,
         );
         if (messages.length === 0 || textLength > 20_000) {
