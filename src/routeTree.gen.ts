@@ -19,6 +19,7 @@ import { Route as AppCategoriesRouteImport } from './routes/_app.categories'
 import { Route as AppCoachRouteImport } from './routes/_app.coach'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
+import { Route as ApiPetChatRouteImport } from './routes/api/pet-chat'
 import { Route as AppCategoriesIdRouteImport } from './routes/_app.categories.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -70,6 +71,11 @@ const AppProfileRoute = AppProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPetChatRoute = ApiPetChatRouteImport.update({
+  id: '/api/pet-chat',
+  path: '/api/pet-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppCategoriesIdRoute = AppCategoriesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/coach': typeof AppCoachRoute
   '/dashboard': typeof AppDashboardRoute
   '/profile': typeof AppProfileRoute
+  '/api/pet-chat': typeof ApiPetChatRoute
   '/categories/$id': typeof AppCategoriesIdRoute
 }
 export interface FileRoutesByTo {
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/coach': typeof AppCoachRoute
   '/dashboard': typeof AppDashboardRoute
   '/profile': typeof AppProfileRoute
+  '/api/pet-chat': typeof ApiPetChatRoute
   '/categories/$id': typeof AppCategoriesIdRoute
 }
 export interface FileRoutesById {
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/_app/coach': typeof AppCoachRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/profile': typeof AppProfileRoute
+  '/api/pet-chat': typeof ApiPetChatRoute
   '/_app/categories/$id': typeof AppCategoriesIdRoute
 }
 export interface FileRouteTypes {
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/dashboard'
     | '/profile'
+    | '/api/pet-chat'
     | '/categories/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/coach'
     | '/dashboard'
     | '/profile'
+    | '/api/pet-chat'
     | '/categories/$id'
   id:
     | '__root__'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/_app/coach'
     | '/_app/dashboard'
     | '/_app/profile'
+    | '/api/pet-chat'
     | '/_app/categories/$id'
   fileRoutesById: FileRoutesById
 }
@@ -160,6 +172,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiPetChatRoute: typeof ApiPetChatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -234,6 +247,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfileRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/pet-chat': {
+      id: '/api/pet-chat'
+      path: '/api/pet-chat'
+      fullPath: '/api/pet-chat'
+      preLoaderRoute: typeof ApiPetChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/categories/$id': {
       id: '/_app/categories/$id'
       path: '/$id'
@@ -280,6 +300,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiPetChatRoute: ApiPetChatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
