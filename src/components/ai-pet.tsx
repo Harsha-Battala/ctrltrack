@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { useQuery } from "@tanstack/react-query";
 import { X, Minus, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -97,35 +96,17 @@ export function AiPet() {
     setPos({ x: window.innerWidth - 130, y: window.innerHeight - 170 });
   }, [open]);
 
-  const { data: snapshot } = useQuery({
-    queryKey: ["pet-context", user?.id],
-    enabled: !!user,
-    staleTime: 60_000,
-    queryFn: async () => {
-      const [items, cats] = await Promise.all([
-        supabase
-          .from("items")
-          .select("title, completed, priority, category_id, created_at, completed_at")
-          .order("created_at", { ascending: false })
-          .limit(60),
-        supabase.from("categories").select("id, name, description"),
-      ]);
-      const catMap = new Map((cats.data ?? []).map((c) => [c.id, c.name]));
-      const rows = items.data ?? [];
-      const open = rows.filter((i) => !i.completed);
-      return [
-        `Categories: ${(cats.data ?? []).map((c) => c.name).join(", ") || "none yet"}`,
-        `Open items (${open.length}): ` +
-          (open
-            .slice(0, 25)
-            .map((i) => `${i.title} [${catMap.get(i.category_id) ?? "?"}, ${i.priority}]`)
-            .join("; ") || "none"),
-        `Completed recently: ${rows.filter((i) => i.completed).length}`,
-      ].join("\n");
+  const transport = useMemo(() => new DefaultChatTransport({
+    api: "/api/pet-chat",
+    fetch: async (input, init) => {
+      const { data } = await supabase.auth.getSession();
+      const headers = new Headers(init?.headers);
+      if (data.session?.access_token) {
+        headers.set("Authorization", `Bearer ${data.session.access_token}`);
+      }
+      return fetch(input, { ...init, headers });
     },
-  });
-
-  const transport = useMemo(() => new DefaultChatTransport({ api: "/api/pet-chat" }), []);
+  }), []);
   const { messages, sendMessage, status, error } = useChat({ transport });
 
   const busy = status === "submitted" || status === "streaming";
@@ -135,9 +116,9 @@ export function AiPet() {
       const value = text.trim();
       if (!value || busy) return;
       setInput("");
-      void sendMessage({ text: value }, { body: { context: snapshot ?? "" } });
+      void sendMessage({ text: value });
     },
-    [busy, sendMessage, snapshot],
+    [busy, sendMessage],
   );
 
   const handleSubmit = (message: PromptInputMessage) => {
